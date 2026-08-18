@@ -1,0 +1,16 @@
+{
+  "name": "qadam",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Walk, mint coins, spend them as a capped discount. Pakistan.",
+  "engines": { "node": ">=20.11" },
+  "scripts": {
+    "test": "node db/test/run.mjs",
+    "test:keep": "node db/test/run.mjs --keep",
+    "db:apply": "node db/test/run.mjs --apply-only"
+  },
+  "devDependencies": {
+    "pg": "^8.16.3"
+  }
+}

@@ -1,0 +1,36 @@
+# env
+.env
+.env.local
+.env.*.local
+
+# node
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# expo / rn (phase 1)
+.expo/
+dist/
+web-build/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+ios/
+android/
+
+# supabase cli
+supabase/.branches
+supabase/.temp
+.supabase/
+
+# os / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# test scratch
+db/test/.scratch-db
