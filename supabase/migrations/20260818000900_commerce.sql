@@ -107,14 +107,24 @@ begin
   -- How many coins may actually be spent here. Clamped by the wallet, by §0's
   -- ceiling across the whole basket, and by §4's minimum order value.
   if p_coins > 0 and v_subtotal >= v_min_order then
+    -- ceil, not floor: flooring here and flooring again below loses a rupee off
+    -- the ceiling, so the user could never quite reach the discount §0 allows.
+    -- ceil overshoots by less than one coin's worth, and the least() below keeps
+    -- the result inside the ceiling for any configured rate.
     v_coins := least(
       p_coins,
       coin_balance(v_user),
-      floor(v_cap_total / v_coin_value)::int
+      ceil(v_cap_total / v_coin_value)::int
     );
   end if;
 
-  v_discount := floor(v_coins * v_coin_value)::int;
+  v_discount := least(floor(v_coins * v_coin_value)::int, v_cap_total);
+
+  -- Charge only for the coins the discount actually consumed, so a user is never
+  -- debited for value they did not receive.
+  if v_coins > 0 then
+    v_coins := least(v_coins, ceil(v_discount / v_coin_value)::int);
+  end if;
 
   -- Spread the discount across the lines, never exceeding any line's §0 ceiling.
   v_left := v_discount;
@@ -205,19 +215,6 @@ begin
     from order_items oi where oi.order_id = p_order and oi.product_id = p.id;
   end if;
 
-  if p_status = 'refused' then
-    -- The coins are gone. Deliberately no refund call here (§7.5).
-    insert into fraud_events (user_id, kind, detail)
-    values (o.user_id, 'delivery_refused',
-            jsonb_build_object('order_id', p_order, 'total_pkr', o.total_pkr,
-                               'coins_burned', o.coins_spent));
-    update users set status = 'flagged'
-    where id = o.user_id
-      and status = 'active'
-      and (select count(*) from orders
-           where user_id = o.user_id and status = 'refused') >= 2;
-  end if;
-
   update orders
   set status        = p_status,
       confirmed_at  = case when p_status = 'confirmed'  then now() else confirmed_at end,
@@ -229,6 +226,22 @@ begin
       cod_risk_score = case when p_status in ('refused','returned')
                             then cod_risk_score + 1 else cod_risk_score end
   where id = p_order;
+
+  if p_status = 'refused' then
+    -- The coins are gone. Deliberately no refund call anywhere here (§7.5) —
+    -- the burn IS the absence of one.
+    insert into fraud_events (user_id, kind, detail)
+    values (o.user_id, 'delivery_refused',
+            jsonb_build_object('order_id', p_order, 'total_pkr', o.total_pkr,
+                               'coins_burned', o.coins_spent));
+
+    -- Counted after the status is written, so this order counts as one of them.
+    update users set status = 'flagged'
+    where id = o.user_id
+      and status = 'active'
+      and (select count(*) from orders
+           where user_id = o.user_id and status = 'refused') >= 2;
+  end if;
 end
 $$;
 

@@ -25,9 +25,18 @@ export async function withRollback(fn) {
   }
 }
 
-/** Forces every DEFERRED constraint trigger to run now, as COMMIT would. */
+/**
+ * Forces every DEFERRED constraint trigger to run now, as COMMIT would, then
+ * restores deferral.
+ *
+ * Restoring matters: SET CONSTRAINTS ALL IMMEDIATE lasts for the rest of the
+ * transaction, and place_order legitimately writes an order header before its
+ * items. Leaving constraints immediate would make the checkout path fail on a
+ * check that is only ever meant to hold at COMMIT.
+ */
 export async function flushDeferred(c) {
   await c.query('set constraints all immediate');
+  await c.query('set constraints all deferred');
 }
 
 let savepointSeq = 0;
@@ -131,6 +140,13 @@ export async function asUser(c, userId, fn) {
   try {
     return await fn();
   } finally {
-    await c.query('reset role');
+    // A failed statement leaves the transaction aborted, so this can throw. Let
+    // the original error be the one that reaches the caller; a savepoint
+    // rollback restores the role anyway, since SET LOCAL ROLE is transactional.
+    try {
+      await c.query('reset role');
+    } catch {
+      /* superseded by the error we are already propagating */
+    }
   }
 }
