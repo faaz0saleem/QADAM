@@ -61,8 +61,13 @@ export async function expectRejected(c, run, matcher) {
 let seq = 0;
 const uniq = () => `${Date.now()}${(seq += 1)}`;
 
+// Unique per test process, so files running in parallel cannot collide.
+const phonePrefix = String(process.pid % 1000).padStart(3, '0')
+  + String(Math.floor(Math.random() * 1000)).padStart(3, '0');
+const nextPhone = () => `+92${phonePrefix}${String((seq += 1)).padStart(4, '0')}`;
+
 export async function makeUser(c, { city = 'Lahore', ageDays = 30, status = 'active' } = {}) {
-  const phone = `+9230${uniq()}`.slice(0, 15);
+  const phone = nextPhone();
   const { rows } = await c.query(
     `with a as (insert into auth.users (phone) values ($1) returning id)
      insert into users (id, phone, name, city, status, created_at)

@@ -80,12 +80,15 @@ begin
 end
 $$;
 
--- 1.0 on day one, rising linearly to STREAK_MULTIPLIER_MAX at STREAK_DAYS_FOR_MAX.
+-- Exactly 1.0 on day one, rising linearly to STREAK_MULTIPLIER_MAX on day
+-- STREAK_DAYS_FOR_MAX. Day one is exactly 1.0 on purpose: §4 promises "1,000
+-- steps = 10 coins" forever, and a first-day multiplier would make the very
+-- first number the user sees disagree with the promise.
 create or replace function streak_multiplier(p_streak int) returns numeric
 language sql stable as $$
   select 1 + (config_num('STREAK_MULTIPLIER_MAX') - 1)
-             * least(greatest(p_streak, 0), config_num('STREAK_DAYS_FOR_MAX'))
-             / config_num('STREAK_DAYS_FOR_MAX');
+             * least(greatest(p_streak - 1, 0), config_num('STREAK_DAYS_FOR_MAX') - 1)
+             / greatest(config_num('STREAK_DAYS_FOR_MAX') - 1, 1);
 $$;
 
 -- ==========================================================================
@@ -116,7 +119,7 @@ declare
   v_today      date := pkt_date();
   v_prev       daily_steps%rowtype;
   v_prev_raw   int  := 0;
-  v_baseline   timestamptz;
+  v_window_end timestamptz;
   v_minutes    numeric;
   v_allowed    int;
   v_credited   int;
@@ -152,21 +155,30 @@ begin
   -- A device's daily total only ever goes up. A lower number means a reinstall,
   -- a clock change or a fabrication; keep the higher figure and credit nothing new.
   if p_raw < v_prev_raw then
-    v_flags := v_flags || 'raw_regressed';
+    v_flags := array_append(v_flags, 'raw_regressed');
     p_raw := v_prev_raw;
   end if;
 
-  -- §6.1 rate ceiling: >200 steps/minute is not a human. The excess is rejected
-  -- rather than the whole submission, so an honest device syncing after a long
-  -- walk still gets the plausible portion.
-  v_baseline := coalesce(v_prev.updated_at, pkt_day_start(p_date));
-  v_minutes  := greatest(1, extract(epoch from (now() - v_baseline)) / 60.0);
-  v_allowed  := v_prev_raw + floor(v_minutes * v_rate)::int;
+  -- §6.1 rate ceiling: >200 steps/minute is not a human.
+  --
+  -- Measured against the elapsed time INSIDE the reported day, not against the
+  -- gap between two syncs. Health Connect and HealthKit hand over step data in
+  -- batches, so an honest device routinely reports thousands of new steps a
+  -- minute after its last sync — a per-sync ceiling would punish exactly the
+  -- devices behaving correctly, and would clamp any resync of a past day. What
+  -- is genuinely impossible is a DAY total larger than the day has had minutes.
+  --
+  -- The excess is clamped rather than the submission refused, so an honest
+  -- device with one bad reading still gets its plausible steps.
+  v_window_end := least(now(), pkt_day_start(p_date) + interval '1 day');
+  v_minutes    := greatest(1, extract(epoch from (v_window_end - pkt_day_start(p_date))) / 60.0);
+  v_allowed    := floor(v_minutes * v_rate)::int;
   if p_raw > v_allowed then
     insert into fraud_events (user_id, kind, detail)
     values (p_user, 'rate_ceiling', jsonb_build_object(
-      'date', p_date, 'submitted', p_raw, 'allowed', v_allowed, 'minutes', round(v_minutes, 1)));
-    v_flags := v_flags || 'rate_clamped';
+      'date', p_date, 'submitted', p_raw, 'allowed', v_allowed,
+      'minutes_elapsed_in_day', round(v_minutes, 1)));
+    v_flags := array_append(v_flags, 'rate_clamped');
     p_raw := v_allowed;
   end if;
 
@@ -183,7 +195,7 @@ begin
   -- §6.1 daily cap, always server-side.
   v_credited := least(p_raw, v_cap);
   if p_raw > v_cap then
-    v_flags := v_flags || 'daily_cap';
+    v_flags := array_append(v_flags, 'daily_cap');
   end if;
 
   -- §6.1 attestation. Unattested submissions are recorded and credited nothing.
@@ -203,7 +215,7 @@ begin
   insert into daily_steps (user_id, date, raw_steps, credited_steps, coins_awarded,
                            source, attested, flags, updated_at)
   values (p_user, p_date, p_raw, v_credited, 0, p_source, p_attested,
-          (select array_agg(distinct f) from unnest(v_flags) f), now())
+          coalesce((select array_agg(distinct f) from unnest(v_flags) f), '{}'), now())
   on conflict (user_id, date) do update
     set raw_steps      = excluded.raw_steps,
         credited_steps = greatest(daily_steps.credited_steps, excluded.credited_steps),
