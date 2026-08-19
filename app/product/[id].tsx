@@ -10,6 +10,7 @@ import { useI18n } from '../../src/i18n';
 import { useAppState } from '../../src/data/AppState';
 import { useCart } from '../../src/data/Cart';
 import * as api from '../../src/data/api';
+import { track } from '../../src/lib/analytics';
 import type { Product } from '../../src/data/types';
 
 /**
@@ -41,7 +42,17 @@ function ProductBody() {
   useEffect(() => {
     let alive = true;
     api.getProducts(userId)
-      .then((all) => { if (alive) setProduct(all.find((p) => p.id === id) ?? null); })
+      .then((all) => {
+        if (!alive) return;
+        const found = all.find((p) => p.id === id) ?? null;
+        setProduct(found);
+        if (found) {
+          track('product_viewed', {
+            product_id: found.id,
+            coin_discount_available: found.yourDiscountPkr,
+          });
+        }
+      })
       .catch(() => {});
     return () => { alive = false; };
   }, [userId, id]);
@@ -105,6 +116,7 @@ function ProductBody() {
       <Pressable
         onPress={() => {
           add(product, qty);
+          track('add_to_cart', { product_id: product.id });
           router.back();
         }}
         disabled={product.stock === 0}

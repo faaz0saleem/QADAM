@@ -37,6 +37,8 @@ const EXPECTED_TABLES = {
   ad_views:         { authenticated: ['SELECT'] },
   notifications:    { authenticated: ['SELECT'] },
   push_tokens:      { authenticated: ['SELECT', 'INSERT', 'UPDATE', 'DELETE'] },
+  // write-only: a client records its own events and reads none of them
+  analytics_events: { authenticated: ['INSERT'] },
   // the shop — products and order_items are column-restricted, see below
   brands:           { anon: ['SELECT'], authenticated: ['SELECT'] },
   categories:       { anon: ['SELECT'], authenticated: ['SELECT'] },
@@ -87,6 +89,8 @@ const SERVER_ONLY_FUNCTIONS = [
   'queue_expiry_warnings', 'queue_streak_warnings', 'refresh_leaderboards',
   'gen_invite_code', 'gen_referral_code',
   'assert_basket_is_sane', 'assert_self',
+  // the Phase 1 decision: an operator's numbers, not a user's
+  'retention_curve', 'phase1_gates', 'phase2_is_unlocked',
 ];
 
 async function tableGrants(c) {

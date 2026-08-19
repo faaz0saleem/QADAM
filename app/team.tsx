@@ -7,6 +7,7 @@ import { space, radius, MIN_TAP } from '../src/theme/tokens';
 import { text } from '../src/theme/type';
 import { useI18n } from '../src/i18n';
 import * as api from '../src/data/api';
+import { track } from '../src/lib/analytics';
 
 /**
  * §7.6 — "Make creating and sharing a team take under 30 seconds."
@@ -39,10 +40,12 @@ function TeamBody() {
     try {
       const { inviteCode } = await api.createTeam(name.trim());
       setCreated(inviteCode);
+      track('team_created');
       // Straight into the share sheet. This is the 30 seconds.
       await Share.share({
         message: `Join my team on Qadam. Invite code: ${inviteCode}`,
       });
+      track('team_invite_shared', { channel: 'share_sheet' });
     } catch (e) {
       setError(e instanceof Error ? e.message : t.common.retry);
     } finally {
@@ -55,6 +58,7 @@ function TeamBody() {
     setError(null);
     try {
       await api.joinTeam(code);
+      track('team_joined', { via: 'code' });
       router.replace('/(tabs)/board');
     } catch (e) {
       setError(e instanceof Error ? e.message : t.common.retry);

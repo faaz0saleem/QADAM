@@ -10,6 +10,7 @@ import { formatSteps, formatRankLine, formatRank } from '../../src/lib/format';
 import { daysUntilWeekReset } from '../../src/lib/dates';
 import { useI18n } from '../../src/i18n';
 import { useAppState } from '../../src/data/AppState';
+import { track } from '../../src/lib/analytics';
 import * as api from '../../src/data/api';
 import type { BoardRow, BoardScope } from '../../src/data/types';
 
@@ -34,7 +35,14 @@ function BoardBody() {
   useEffect(() => {
     let alive = true;
     api.getBoard(userId, scope).then((r) => {
-      if (alive) setRows(r);
+      if (!alive) return;
+      setRows(r);
+      const me = r.find((row) => row.isMe);
+      track('leaderboard_viewed', {
+        scope: scope === 'pakistan' ? 'national' : scope,
+        own_rank: me?.rank ?? null,
+        own_percentile: me?.percentile ?? null,
+      });
     }).catch(() => { if (alive) setRows([]); });
     return () => { alive = false; };
   }, [userId, scope]);

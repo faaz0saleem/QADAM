@@ -70,6 +70,11 @@ grant select, insert, update, delete on friendships  to authenticated;
 grant select                         on leaderboard_snap to authenticated;
 grant select, insert, update, delete on push_tokens  to authenticated;
 
+-- Write-only: a client records its own events and can read none of them
+-- (docs/METRICS.md §2). Reading the table would expose other people's habits.
+grant insert on analytics_events to authenticated;
+grant usage  on sequence analytics_events_id_seq to authenticated;
+
 -- views a client may read
 grant select on coin_batches             to authenticated;
 grant select on public_profiles          to authenticated;
@@ -108,3 +113,5 @@ grant execute on function my_referrals()                                  to aut
 --   queue_order_confirmation      — could queue messages against any order
 --   queue_expiry_warnings, queue_streak_warnings, refresh_leaderboards — cron only
 --   gen_invite_code, gen_referral_code — cheap to call, no reason to expose
+--   retention_curve, phase1_gates, phase2_is_unlocked — the Phase 1 decision;
+--                                   an operator's numbers, not a user's

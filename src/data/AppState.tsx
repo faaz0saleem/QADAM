@@ -4,6 +4,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as api from './api';
 import { getHealthSource, PermissionState } from '../lib/health';
 import { registerForPush } from '../lib/push';
+import { track, flush as flushAnalytics } from '../lib/analytics';
+import { initAnalytics, setAnalyticsUser, trackForeground } from '../lib/analyticsSink';
 import { pktDateString } from '../lib/dates';
 import type { CoinBatch, TodaySteps } from './types';
 
@@ -66,6 +68,9 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       // §4, §7.2: ask for push the first time there are coins to lose, not on
       // first launch. A prompt shown before anyone has minted a coin gets
       // denied, and on iOS it cannot be asked for again.
+      if (t.streak > today.streak && t.streak > 0) track('streak_continued', { day_count: t.streak });
+      if (t.streak === 0 && today.streak > 1) track('streak_broken', { day_count_lost: today.streak });
+
       if (b > 0 && !pushAsked.current) {
         pushAsked.current = true;
         registerForPush().catch(() => {});
@@ -115,12 +120,21 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       const state = await health.checkPermission();
       setPermission(state);
 
+      if (state !== permission) {
+        // Only on a change, so a foreground sync every few minutes does not
+        // flood the permission funnel with duplicates.
+        track(state === 'granted' ? 'health_permission_granted' : 'health_permission_denied',
+          { source: health.name });
+      }
+
       if (state === 'granted' && health.name !== 'none') {
         // §6.1 caps backfill at 48 hours, so there is no point reading further.
         const readings = await health.readDays(3);
         for (const r of readings) {
           try {
-            await api.submitSteps(r.date, r.steps, health.name);
+            const minted = await api.submitSteps(r.date, r.steps, health.name);
+            track('steps_synced', { raw: r.steps, credited: r.steps, capped: r.steps > 15000 });
+            if (minted > 0) track('coins_minted', { amount: minted, running_balance: balance + minted });
           } catch {
             const raw = await AsyncStorage.getItem(QUEUE_KEY);
             const queue: Pending[] = raw ? JSON.parse(raw) : [];
@@ -149,13 +163,18 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
 
     (async () => {
       const { supabase } = await import('../lib/supabase');
+      initAnalytics('0.1.0');
       const session = await supabase?.auth.getSession();
-      setUserId(session?.data.session?.user.id ?? null);
+      const id = session?.data.session?.user.id ?? null;
+      setUserId(id);
+      setAnalyticsUser(id);
+      await trackForeground();
 
       // Keep userId in step with sign-in, sign-out and token refresh, rather
       // than reading the session once at startup and going stale.
       authSub = supabase?.auth.onAuthStateChange((_event, s) => {
         setUserId(s?.user.id ?? null);
+        setAnalyticsUser(s?.user.id ?? null);
       }).data.subscription;
 
       await sync();
@@ -163,7 +182,13 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     })();
     // §7.1: and a foreground sync, so the count is right the moment they look.
     const sub = RNAppState.addEventListener('change', (s) => {
-      if (s === 'active') sync();
+      if (s === 'active') {
+        // §1.2: a foreground is what counts as a session and an app_open.
+        void trackForeground();
+        sync();
+      } else {
+        void flushAnalytics();
+      }
     });
     return () => {
       sub.remove();

@@ -10,6 +10,7 @@ import { useI18n } from '../src/i18n';
 import { useAppState } from '../src/data/AppState';
 import { useCart } from '../src/data/Cart';
 import * as api from '../src/data/api';
+import { track } from '../src/lib/analytics';
 
 /**
  * §7.5 — checkout, and the rule the business rests on.
@@ -59,6 +60,14 @@ function CheckoutBody() {
     setPlacing(true);
     setError(null);
     try {
+      track('checkout_started', { subtotal: subtotalPkr });
+      if (useCoins && discount > 0) {
+        track('coins_applied', {
+          coins: quote.coins,
+          discount_pkr: discount,
+          pct_of_subtotal: subtotalPkr > 0 ? Math.round((100 * discount) / subtotalPkr) : 0,
+        });
+      }
       await api.placeOrder({
         items,
         address: { line1: '—', city: '—' },
@@ -66,6 +75,9 @@ function CheckoutBody() {
         paymentMethod: 'cod',
         // A coin COUNT, which is a choice. Never a discount amount (§13.2).
         coins: useCoins ? quote.coins : 0,
+      });
+      track('order_placed', {
+        total, payment_method: 'cod', discount_pkr: discount,
       });
       clear();
       await refresh();
