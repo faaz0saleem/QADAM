@@ -3,9 +3,16 @@
 A plain list of what exists in Qadam today, what is proven by a test, and what is
 deliberately not built yet. Everything below is on `main`.
 
-**Verification in one command:** `npm run check` — 307 database assertions,
+**Verification in one command:** `npm run check` — 410 database assertions,
 9 concurrency checks in real parallel sessions, 18 Edge Function tests,
 39 app tests, and the §9 design rules.
+
+The app is now feature-complete across §10's four phases. Note that this
+overrides §10's sequencing, which says Phase 1 ships with no store and stops for
+four weeks with real users first — that was a deliberate instruction, and the
+four-week test is still worth running before the shop is switched on for
+everyone. `store_feed` returning an empty catalogue is a perfectly good way to
+ship Phase 1 out of this same codebase.
 
 ---
 

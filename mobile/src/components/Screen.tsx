@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { earning, space, text as type } from '@/theme';
+import { space, text as type, SurfaceProvider, useSurface } from '@/theme';
 import { CoinValue } from './Coin';
 import { Text } from './ui';
 import { useI18n } from '@/i18n';
@@ -21,6 +21,32 @@ export function Screen({
   children,
   onRefresh,
   refreshing = false,
+  surface = 'earning',
+}: {
+  title: string;
+  children: ReactNode;
+  onRefresh?: () => void;
+  refreshing?: boolean;
+  /**
+   * §9.1 — which temperature this screen is. The store is the light half, and
+   * the change is meant to feel like stepping indoors.
+   */
+  surface?: 'earning' | 'spending';
+}) {
+  return (
+    <SurfaceProvider mode={surface}>
+      <ScreenBody title={title} onRefresh={onRefresh} refreshing={refreshing}>
+        {children}
+      </ScreenBody>
+    </SurfaceProvider>
+  );
+}
+
+function ScreenBody({
+  title,
+  children,
+  onRefresh,
+  refreshing = false,
 }: {
   title: string;
   children: ReactNode;
@@ -30,9 +56,10 @@ export function Screen({
   const insets = useSafeAreaInsets();
   const { t } = useI18n();
   const { balance } = useWallet();
+  const surface = useSurface();
 
   return (
-    <View style={[styles.root, { paddingTop: insets.top }]}>
+    <View style={[styles.root, { paddingTop: insets.top, backgroundColor: surface.bg }]}>
       <View style={styles.header}>
         {/* §9.7 — works at 320px. A long Urdu title beside a six-digit balance
             is the case that overflows, so the title yields and the balance,
@@ -53,7 +80,7 @@ export function Screen({
         showsVerticalScrollIndicator={false}
         refreshControl={
           onRefresh
-            ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={earning.textDim} />
+            ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={surface.textDim} />
             : undefined
         }
       >
@@ -64,7 +91,7 @@ export function Screen({
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: earning.bg },
+  root: { flex: 1 },
   header: {
     flexDirection: 'row',
     alignItems: 'baseline',

@@ -56,11 +56,30 @@ def sources() -> list[pathlib.Path]:
 
 
 def check_brass() -> None:
+    """
+    Brass may appear in three files, and the third may only be IMPORTED by one.
+
+    The notification-channel exception was added for a real reason, and it then
+    became a way to obtain brass anywhere by importing it — which is how a rule
+    with one exception becomes a rule with none. Importing it outside the
+    notifications path is now a violation in its own right.
+    """
     allowed = {
         BRASS_DEFINITION.resolve(),
         BRASS_CONSUMER.resolve(),
         BRASS_NOTIFICATION_CHANNEL.resolve(),
     }
+    may_import_channel_colour = {(APP / 'src' / 'lib' / 'notifications.ts').resolve()}
+
+    for path in sources():
+        if path.resolve() in allowed or path.resolve() in may_import_channel_colour:
+            continue
+        for n, line in enumerate(path.read_text(encoding='utf-8').splitlines(), 1):
+            if 'notification-colour' in line or 'COIN_BRASS_FOR_NOTIFICATION_CHANNEL' in line:
+                failures.append(
+                    f'{path.relative_to(ROOT)}:{n}: the notification-channel brass '
+                    f'exception is not a way to reach brass elsewhere (README §9.2).'
+                )
     for path in sources():
         if path.resolve() in allowed:
             continue

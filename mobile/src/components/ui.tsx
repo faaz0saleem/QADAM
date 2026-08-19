@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { StyleSheet, Text as RNText, View, type TextStyle, type ViewStyle } from 'react-native';
 
-import { earning, radius, space, text as type, urduAdjust } from '@/theme';
+import { radius, space, text as type, urduAdjust, useSurface } from '@/theme';
 import { useI18n } from '@/i18n';
 
 /**
@@ -33,6 +33,7 @@ export function Text({
   accessibilityLiveRegion?: 'none' | 'polite' | 'assertive';
 }) {
   const { locale } = useI18n();
+  const surface = useSurface();
   const isData = variant.startsWith('data') || variant === 'counter';
   return (
     <RNText
@@ -42,7 +43,7 @@ export function Text({
       accessibilityLiveRegion={accessibilityLiveRegion}
       style={[
         type[variant],
-        { color: faint ? earning.textFaint : dim ? earning.textDim : earning.text },
+        { color: faint ? surface.textFaint : dim ? surface.textDim : surface.text },
         // Numbers stay in the monospace face in every language. A tabular column
         // that changes face between locales stops being a column.
         locale === 'ur' && !isData ? urduAdjust : null,
@@ -55,7 +56,10 @@ export function Text({
 }
 
 export function Card({ children, style }: { children: ReactNode; style?: ViewStyle }) {
-  return <View style={[styles.card, style]}>{children}</View>;
+  const surface = useSurface();
+  return (
+    <View style={[styles.card, { backgroundColor: surface.raised }, style]}>{children}</View>
+  );
 }
 
 /** Respects RTL: `row` flips to `row-reverse` in Urdu without a second style. */
@@ -89,7 +93,8 @@ export function Row({
 }
 
 export function Divider() {
-  return <View style={styles.divider} />;
+  const surface = useSurface();
+  return <View style={[styles.divider, { backgroundColor: surface.rule }]} />;
 }
 
 /** §9.6 — empty states are invitations, not apologies. */
@@ -105,14 +110,12 @@ export function EmptyState({ children }: { children: ReactNode }) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: earning.raised,
     borderRadius: radius.lg,
     padding: space.lg,
     gap: space.sm,
   },
   divider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: earning.rule,
     marginVertical: space.md,
   },
   empty: { paddingVertical: space.xxl, paddingHorizontal: space.lg, alignItems: 'center' },

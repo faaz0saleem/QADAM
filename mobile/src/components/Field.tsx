@@ -1,7 +1,7 @@
 import { forwardRef } from 'react';
 import { StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
 
-import { earning, radius, space, text as type, MIN_TAP_TARGET } from '@/theme';
+import { radius, space, text as type, MIN_TAP_TARGET, useSurface } from '@/theme';
 import { Text } from './ui';
 import { useI18n } from '@/i18n';
 
@@ -20,6 +20,7 @@ export const Field = forwardRef<TextInput, TextInputProps & {
   mono?: boolean;
 }>(function Field({ label, hint, error, mono = false, style, ...props }, ref) {
   const { rtl } = useI18n();
+  const surface = useSurface();
 
   return (
     <View style={styles.wrap}>
@@ -31,7 +32,7 @@ export const Field = forwardRef<TextInput, TextInputProps & {
 
       <TextInput
         ref={ref}
-        placeholderTextColor={earning.textFaint}
+        placeholderTextColor={surface.textFaint}
         // The visible label is the screen-reader label; an input announcing only
         // "text field" is an input nobody can fill in without sight (§9.7).
         accessibilityLabel={label ?? props.placeholder}
@@ -40,15 +41,19 @@ export const Field = forwardRef<TextInput, TextInputProps & {
         style={[
           styles.input,
           mono ? type.dataLarge : type.body,
-          { color: earning.text, textAlign: rtl && !mono ? 'right' : 'left' },
-          error ? styles.inputError : null,
+          {
+            color: surface.text,
+            backgroundColor: surface.sunken,
+            borderBottomColor: error ? surface.bad : surface.rule,
+            textAlign: rtl && !mono ? 'right' : 'left',
+          },
           style,
         ]}
       />
 
       {/* §9.6 — errors say what happened and what to do. */}
       {error ? (
-        <Text variant="bodySmall" style={styles.error}>
+        <Text variant="bodySmall" style={{ color: surface.bad }}>
           {error}
         </Text>
       ) : hint ? (
@@ -64,13 +69,9 @@ const styles = StyleSheet.create({
   wrap: { gap: space.sm },
   input: {
     minHeight: MIN_TAP_TARGET,
-    backgroundColor: earning.sunken,
     borderRadius: radius.md,
     borderBottomWidth: 2,
-    borderBottomColor: earning.rule,
     paddingHorizontal: space.lg,
     paddingVertical: space.md,
   },
-  inputError: { borderBottomColor: earning.bad },
-  error: { color: earning.bad },
 });

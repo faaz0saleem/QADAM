@@ -7,7 +7,7 @@
 -- cannot go round them.
 -- ============================================================================
 begin;
-select plan(30);
+select plan(36);
 
 create temporary table t (a uuid, b uuid, c uuid, code_b text);
 insert into t (a, b, c) values (
@@ -107,6 +107,34 @@ select is((select is_captain from public.my_team()), false, 'the old captain is 
 
 select lives_ok($$ select public.leave_team() $$, 'and can now leave');
 select is((select count(*)::int from public.my_team()), 0, 'they are out of the team');
+
+-- ── §7.6 — office vs office needs a rank for the OFFICE ────────────────────
+create temporary table two (cap2 uuid, member2 uuid);
+insert into two (cap2, member2) values (
+  tests.new_user(p_city => 'Lahore'), tests.new_user(p_city => 'Lahore'));
+
+select tests.act_as((select cap2 from two));
+select public.create_team('Rival Office') \gset rival_
+select tests.act_as((select member2 from two));
+select public.join_team((select invite_code from public.teams where name = 'Rival Office')) \gset j2_
+
+-- The rival team has two walkers doing 9,000 each; ours has one on 12,000.
+select tests.log_day((select cap2 from two), public.pkt_date(now()), 9000);
+select tests.log_day((select member2 from two), public.pkt_date(now()), 9000);
+select ok(private.rebuild_leaderboards() >= 0, 'boards rebuild');
+
+select tests.act_as((select a from t));
+select is((select name from public.team_standings() order by rank limit 1), 'Rival Office',
+  'teams are ranked on TOTAL steps — two people at 9,000 beat one at 12,000');
+
+select is((select count(*)::int from public.team_standings()), 2, 'both teams are standing');
+
+select is((select members from public.team_standings() where name = 'Rival Office'), 2,
+  'the standing shows how many people walked for the team');
+
+select tests.act_as((select cap2 from two));
+select is((select rank from public.my_team_standing()), 1, 'and a captain can see where their team sits');
+select is((select of_total from public.my_team_standing()), 2, 'out of how many');
 
 select * from finish();
 rollback;

@@ -53,7 +53,13 @@ export const spending = {
   bad: palette.clay,
 } as const;
 
-export type Surface = typeof earning;
+/**
+ * `as const` above pins each value to its own literal type, which is what makes a
+ * typo in a token name a compile error. Widening the VALUES back to string is
+ * what lets the two surfaces be the same shape — otherwise `spending` is not
+ * assignable to `earning`, and the whole point is that they are interchangeable.
+ */
+export type Surface = { readonly [K in keyof typeof earning]: string };
 
 /**
  * BRASS IS RESERVED.

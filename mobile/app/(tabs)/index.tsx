@@ -6,6 +6,7 @@ import { Card, Row, Text } from '@/components/ui';
 import { MintingCoinValue, CoinValue } from '@/components/Coin';
 import { LedgerRule } from '@/components/LedgerRule';
 import { TickingNumber } from '@/components/TickingNumber';
+import { EarnCard } from '@/components/EarnCard';
 import { earning, space, MIN_TAP_TARGET, radius } from '@/theme';
 import { useI18n, fill } from '@/i18n';
 import { useSteps } from '@/hooks/useSteps';
@@ -116,6 +117,12 @@ export default function StepsScreen() {
 
       {/* 5 — exactly one contextual card, whichever is most urgent */}
       {contextual}
+
+      {/*
+        §7.8 — the only advertisement in the app, in the earning half, below the
+        fold. Never in browse, cart or checkout.
+      */}
+      <EarnCard />
 
       {/* §7.1 — "show last-synced time so failures are visible", and §9.6 —
           say what happened. An unreachable server is not a lost connection, and

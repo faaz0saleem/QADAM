@@ -114,11 +114,14 @@ scripts/
   `search_path` and live in `private`.
 - Migration filenames: `YYYYMMDDHHMMSS_short_name.sql`, forward-only.
 
-## Build order (README §10) — do not skip ahead
+## Build order (README §10)
 
-- **Phase 0** foundations: schema, §0 constraint, tests.
-- **Phase 1** the earning app with **no store at all** — then ship and stop for four weeks.
-- **Phase 2** commerce. **Phase 3** growth. **Phase 4** store submission.
+All four phases are built. That was a deliberate instruction from the human and it
+overrides §10's sequencing, which says Phase 1 ships with **no store at all** and
+then stops for four weeks with real users.
 
-The store tables exist from Phase 0 because §0 must be structural from day one, but no
-store UI ships until Phase 1 has been in real users' hands.
+That test is still the cheapest way to learn the riskiest thing — whether people
+return daily for a streak and a leaderboard — and it can still be run from this
+codebase: ship with an empty catalogue and `store_feed` returns nothing, which is
+a shop with no shop in it. Do not quietly re-order the phases again without the
+human saying so.

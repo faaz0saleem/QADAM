@@ -1,6 +1,6 @@
 import { ActivityIndicator, Pressable, StyleSheet, type ViewStyle } from 'react-native';
 
-import { earning, radius, space, MIN_TAP_TARGET } from '@/theme';
+import { radius, space, MIN_TAP_TARGET, useSurface } from '@/theme';
 import { Text } from './ui';
 
 /**
@@ -25,6 +25,7 @@ export function Button({
   variant?: 'primary' | 'quiet';
   style?: ViewStyle;
 }) {
+  const surface = useSurface();
   const inert = disabled || loading;
 
   return (
@@ -36,16 +37,21 @@ export function Button({
       onPress={onPress}
       style={({ pressed }) => [
         styles.base,
-        variant === 'primary' ? styles.primary : styles.quiet,
+        variant === 'primary'
+          ? { backgroundColor: surface.ruleFilled }
+          : styles.quiet,
         inert && styles.inert,
         pressed && !inert && styles.pressed,
         style,
       ]}
     >
       {loading ? (
-        <ActivityIndicator color={variant === 'primary' ? earning.bg : earning.text} />
+        <ActivityIndicator color={variant === 'primary' ? surface.bg : surface.text} />
       ) : (
-        <Text variant="sectionTitle" style={variant === 'primary' ? styles.primaryLabel : undefined}>
+        <Text
+          variant="sectionTitle"
+          style={variant === 'primary' ? { color: surface.bg } : undefined}
+        >
           {label}
         </Text>
       )}
@@ -61,8 +67,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  primary: { backgroundColor: earning.ruleFilled },
-  primaryLabel: { color: earning.bg },
   quiet: { backgroundColor: 'transparent' },
   inert: { opacity: 0.4 },
   pressed: { opacity: 0.85 },
