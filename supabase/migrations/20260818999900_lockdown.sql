@@ -75,6 +75,9 @@ grant select, insert, update, delete on push_tokens  to authenticated;
 grant insert on analytics_events to authenticated;
 grant usage  on sequence analytics_events_id_seq to authenticated;
 
+-- §1.5: a user may see what they have asked to be told about, and nothing else.
+grant select on notify_me to authenticated;
+
 -- views a client may read
 grant select on coin_batches             to authenticated;
 grant select on public_profiles          to authenticated;
@@ -99,6 +102,9 @@ grant execute on function join_team(text)                                 to aut
 grant execute on function team_roster(uuid)                               to authenticated;
 grant execute on function rewarded_ads_left_today()                        to authenticated;
 grant execute on function my_referrals()                                  to authenticated;
+grant execute on function shop_is_open()                                  to authenticated;
+grant execute on function register_interest(uuid, text)                   to authenticated;
+grant execute on function delete_my_account()                             to authenticated;
 
 -- Everything else is server-side only, and the sharp ones are worth naming:
 --   config_num, config_int        — would leak COIN_VALUE_PKR (§4)
@@ -115,3 +121,5 @@ grant execute on function my_referrals()                                  to aut
 --   gen_invite_code, gen_referral_code — cheap to call, no reason to expose
 --   retention_curve, phase1_gates, phase2_is_unlocked — the Phase 1 decision;
 --                                   an operator's numbers, not a user's
+--   shop_interest_signals         — §1.5's demand read; same reason
+--   assert_active                 — a guard, called from inside definer functions

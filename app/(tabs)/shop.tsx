@@ -10,6 +10,7 @@ import { formatPkr } from '../../src/lib/format';
 import { useI18n } from '../../src/i18n';
 import { useAppState } from '../../src/data/AppState';
 import { useCart } from '../../src/data/Cart';
+import { track } from '../../src/lib/analytics';
 import * as api from '../../src/data/api';
 import type { Product } from '../../src/data/types';
 
@@ -33,10 +34,20 @@ function ShopBody() {
   const { t } = useI18n();
   const { balance, userId } = useAppState();
   const [products, setProducts] = useState<Product[]>([]);
+  // §1.5: null until we know, so the shop never flashes a buy button at
+  // someone and then takes it away.
+  const [open, setOpen] = useState<boolean | null>(null);
 
   useEffect(() => {
     let alive = true;
-    api.getProducts(userId).then((p) => { if (alive) setProducts(p); }).catch(() => {});
+    Promise.all([api.getProducts(userId), api.shopIsOpen()])
+      .then(([p, isOpen]) => {
+        if (!alive) return;
+        setProducts(p);
+        setOpen(isOpen);
+        track(isOpen ? 'store_opened' : 'shop_locked_viewed', { products: p.length });
+      })
+      .catch(() => { if (alive) setOpen(false); });
     return () => { alive = false; };
   }, [userId]);
 
@@ -44,6 +55,18 @@ function ShopBody() {
     <>
       <CoinHeader balance={balance} title={t.shop.title} />
       <Screen>
+        {open === false ? (
+          // §1.5: real products, real prices, real coin discounts — and no till.
+          // Not framed as an apology: the discounts on screen are already
+          // computed against this user's actual balance.
+          <View style={[styles.locked, { borderColor: theme.line, backgroundColor: theme.raised }]}>
+            <Text style={[text.heading, { color: theme.text }]}>{t.shop.openingSoon}</Text>
+            <Text style={[text.body, { color: theme.textMuted, marginTop: space.sm }]}>
+              {t.shop.lockedBody}
+            </Text>
+          </View>
+        ) : null}
+
         {products.length === 0 ? (
           <Text style={[text.body, { color: theme.textMuted, marginTop: space.xxl }]}>
             {t.shop.empty}
@@ -56,7 +79,7 @@ function ShopBody() {
           ))}
         </View>
       </Screen>
-      <CartBar />
+      {open ? <CartBar /> : null}
     </>
   );
 }
@@ -169,6 +192,12 @@ const styles = StyleSheet.create({
   photo: {
     aspectRatio: 1,
     borderRadius: radius.sm,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  locked: {
+    marginTop: space.lg,
+    padding: space.lg,
+    borderRadius: radius.md,
     borderWidth: StyleSheet.hairlineWidth,
   },
   cartBar: {

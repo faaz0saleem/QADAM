@@ -133,13 +133,30 @@ export async function addItem(c, orderId, productId, { qty = 1, discount = 0, pr
   return rows[0].id;
 }
 
-/** Runs the body as if it were an authenticated PostgREST request from this user. */
+/**
+ * Runs the body as if it were an authenticated PostgREST request from this user.
+ *
+ * Both the role AND the JWT claim are restored afterwards. Leaving the claim set
+ * makes every later statement in the transaction look like it came from that
+ * user, which quietly changes what assert_self and the RLS policies do — it can
+ * fabricate a failure in an unrelated test, or hide a real one.
+ */
 export async function asUser(c, userId, fn) {
+  const { rows } = await c.query(
+    `select coalesce(current_setting('request.jwt.claim.sub', true), '') as previous`,
+  );
+  const previous = rows[0].previous;
+
   await c.query(`select set_config('request.jwt.claim.sub', $1, true)`, [userId]);
   await c.query('set local role authenticated');
   try {
     return await fn();
   } finally {
+    try {
+      await c.query(`select set_config('request.jwt.claim.sub', $1, true)`, [previous]);
+    } catch {
+      /* transaction already aborted; the rollback will clear it */
+    }
     // A failed statement leaves the transaction aborted, so this can throw. Let
     // the original error be the one that reaches the caller; a savepoint
     // rollback restores the role anyway, since SET LOCAL ROLE is transactional.

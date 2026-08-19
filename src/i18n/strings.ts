@@ -117,6 +117,13 @@ export const en = {
     addToCart: 'Add to cart',
     useCoins: 'Use coins',
     coinsUsed: 'Coins used',
+    // §1.5 — the locked shop. This is a Phase 1 state, not an apology: the
+    // products are real and the discounts are real, the till just isn't open.
+    openingSoon: 'Opening soon',
+    lockedBody: 'These are real products at real prices, and your coins already count against them. We open when the first brands go live.',
+    notifyMe: 'Tell me when this opens',
+    notifyMeDone: "We'll tell you",
+    notifyMeNumber: 'Add a number and we\'ll message you (optional)',
   },
 
   checkout: {
@@ -143,6 +150,11 @@ export const en = {
     referralPending: '{{name}} joined — you get {{coins}} coins when they order',
     watchVideo: 'Watch a video for {{coins}} coins',
     videoLimit: "You've watched all {{limit}} videos today",
+    deleteAccount: 'Delete account',
+    deleteBody: 'This erases your steps, your streak, your team and your coins. Your order history stays as an anonymous record, which we are required to keep. It cannot be undone.',
+    deleteConfirm: 'Yes, delete it',
+    deleteCancel: 'Keep my account',
+    deleteDone: 'Your account is deleted.',
   },
 
   common: {
@@ -270,6 +282,11 @@ export const ur: Strings = {
     addToCart: 'ٹوکری میں ڈالیں',
     useCoins: 'سکے استعمال کریں',
     coinsUsed: 'سکے استعمال ہوئے',
+    openingSoon: 'جلد کھل رہی ہے',
+    lockedBody: 'یہ اصلی مصنوعات اصلی قیمتوں پر ہیں، اور آپ کے سکے ابھی سے ان پر شمار ہوتے ہیں۔ پہلے برانڈز آتے ہی ہم کھول دیں گے۔',
+    notifyMe: 'کھلنے پر مجھے بتائیں',
+    notifyMeDone: 'ہم آپ کو بتائیں گے',
+    notifyMeNumber: 'نمبر دیں تو ہم پیغام بھیج دیں گے (اختیاری)',
   },
 
   checkout: {
@@ -294,6 +311,11 @@ export const ur: Strings = {
     referralPending: '{{name}} شامل ہو گئے — ان کے آرڈر پر آپ کو {{coins}} سکے ملیں گے',
     watchVideo: '{{coins}} سکوں کے لیے ویڈیو دیکھیں',
     videoLimit: 'آپ آج کی تمام {{limit}} ویڈیوز دیکھ چکے ہیں',
+    deleteAccount: 'اکاؤنٹ ختم کریں',
+    deleteBody: 'اس سے آپ کے قدم، سلسلہ، ٹیم اور سکے ختم ہو جائیں گے۔ آرڈر کا ریکارڈ بے نام شکل میں رہے گا، جو رکھنا ہمارے لیے ضروری ہے۔ یہ واپس نہیں ہو سکتا۔',
+    deleteConfirm: 'ہاں، ختم کر دیں',
+    deleteCancel: 'میرا اکاؤنٹ رہنے دیں',
+    deleteDone: 'آپ کا اکاؤنٹ ختم کر دیا گیا ہے۔',
   },
 
   common: {

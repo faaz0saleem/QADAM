@@ -11,6 +11,7 @@ import { useAppState } from '../../src/data/AppState';
 import { useCart } from '../../src/data/Cart';
 import * as api from '../../src/data/api';
 import { track } from '../../src/lib/analytics';
+import { NotifyMe } from '../../src/components/NotifyMe';
 import type { Product } from '../../src/data/types';
 
 /**
@@ -38,9 +39,11 @@ function ProductBody() {
 
   const [product, setProduct] = useState<Product | null>(null);
   const [qty, setQty] = useState(1);
+  const [open, setOpen] = useState<boolean | null>(null);
 
   useEffect(() => {
     let alive = true;
+    api.shopIsOpen().then((o) => { if (alive) setOpen(o); }).catch(() => setOpen(false));
     api.getProducts(userId)
       .then((all) => {
         if (!alive) return;
@@ -113,24 +116,38 @@ function ProductBody() {
         ))}
       </View>
 
-      <Pressable
-        onPress={() => {
-          add(product, qty);
-          track('add_to_cart', { product_id: product.id });
-          router.back();
-        }}
-        disabled={product.stock === 0}
-        accessibilityRole="button"
-        accessibilityLabel={t.shop.addToCart}
-        style={({ pressed }) => [
-          styles.cta,
-          { backgroundColor: theme.text, opacity: pressed || product.stock === 0 ? 0.6 : 1 },
-        ]}
-      >
-        <Text style={[text.body, { color: theme.bg }]}>
-          {product.stock === 0 ? t.shop.outOfStock : t.shop.addToCart}
-        </Text>
-      </Pressable>
+      {open === false ? (
+        // §1.5: the notify-me replaces the buy button entirely. Showing both
+        // would make the capture look like a consolation prize.
+        <>
+          <Text style={[text.body, { color: theme.textMuted, marginTop: space.xl }]}>
+            {t.shop.openingSoon}
+          </Text>
+          <NotifyMe productId={product.id} />
+        </>
+      ) : (
+        <Pressable
+          onPress={() => {
+            add(product, qty);
+            track('add_to_cart', { product_id: product.id });
+            router.back();
+          }}
+          disabled={product.stock === 0 || open === null}
+          accessibilityRole="button"
+          accessibilityLabel={t.shop.addToCart}
+          style={({ pressed }) => [
+            styles.cta,
+            {
+              backgroundColor: theme.text,
+              opacity: pressed || product.stock === 0 || open === null ? 0.6 : 1,
+            },
+          ]}
+        >
+          <Text style={[text.body, { color: theme.bg }]}>
+            {product.stock === 0 ? t.shop.outOfStock : t.shop.addToCart}
+          </Text>
+        </Pressable>
+      )}
     </Screen>
   );
 }

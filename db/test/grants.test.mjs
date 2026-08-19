@@ -39,6 +39,7 @@ const EXPECTED_TABLES = {
   push_tokens:      { authenticated: ['SELECT', 'INSERT', 'UPDATE', 'DELETE'] },
   // write-only: a client records its own events and reads none of them
   analytics_events: { authenticated: ['INSERT'] },
+  notify_me:        { authenticated: ['SELECT'] },
   // the shop — products and order_items are column-restricted, see below
   brands:           { anon: ['SELECT'], authenticated: ['SELECT'] },
   categories:       { anon: ['SELECT'], authenticated: ['SELECT'] },
@@ -69,6 +70,7 @@ const MUST_BE_UNREACHABLE = [
   'catalogue_margins',   // margin, per category
   'fulfilment_health',   // internal RTO performance
   'referral_status',     // who referred whom, across all users
+  'demand_signals',      // which products people asked about, across all users
 ];
 
 const CLIENT_FUNCTIONS = [
@@ -78,6 +80,7 @@ const CLIENT_FUNCTIONS = [
   'leaderboard_page', 'leaderboard_friends',
   'create_team', 'join_team', 'team_roster',
   'rewarded_ads_left_today', 'my_referrals',
+  'shop_is_open', 'register_interest', 'delete_my_account',
 ];
 
 /** Reaching any of these from a client is a privilege escalation. */
@@ -90,7 +93,8 @@ const SERVER_ONLY_FUNCTIONS = [
   'gen_invite_code', 'gen_referral_code',
   'assert_basket_is_sane', 'assert_self',
   // the Phase 1 decision: an operator's numbers, not a user's
-  'retention_curve', 'phase1_gates', 'phase2_is_unlocked',
+  'retention_curve', 'phase1_gates', 'phase2_is_unlocked', 'shop_interest_signals',
+  'assert_active',
 ];
 
 async function tableGrants(c) {

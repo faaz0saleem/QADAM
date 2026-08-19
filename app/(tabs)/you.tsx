@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { router } from 'expo-router';
 import { Temperature, useTheme } from '../../src/theme/ThemeContext';
 import { Screen } from '../../src/components/Screen';
 import { CoinHeader } from '../../src/components/CoinHeader';
@@ -8,6 +9,7 @@ import { text } from '../../src/theme/type';
 import { useI18n } from '../../src/i18n';
 import { useAppState } from '../../src/data/AppState';
 import * as api from '../../src/data/api';
+import { track, flush as flushAnalytics } from '../../src/lib/analytics';
 import { usingDemoData } from '../../src/data/api';
 import { formatCoins } from '../../src/lib/format';
 
@@ -72,6 +74,8 @@ function YouBody() {
           ))}
         </View>
 
+        <DeleteAccount />
+
         {usingDemoData ? (
           <Text style={[text.dataSmall, { color: theme.textMuted, marginTop: space.xxxl }]}>
             Running on demo data — no Supabase project is configured yet.
@@ -80,6 +84,58 @@ function YouBody() {
         ) : null}
       </Screen>
     </>
+  );
+}
+
+/**
+ * docs/OPERATIONS.md §1.2 — in-app account deletion.
+ *
+ * Both stores require this to be reachable from inside the app, and Google will
+ * reject a build that only links to a web form. It sits at the bottom of You,
+ * behind a confirmation that says plainly what survives: the order history
+ * stays as an anonymous accounting record, because the ledger is append-only.
+ */
+function DeleteAccount() {
+  const theme = useTheme();
+  const { t } = useI18n();
+  const [busy, setBusy] = useState(false);
+
+  function confirm() {
+    Alert.alert(t.you.deleteAccount, t.you.deleteBody, [
+      { text: t.you.deleteCancel, style: 'cancel' },
+      {
+        text: t.you.deleteConfirm,
+        style: 'destructive',
+        onPress: async () => {
+          setBusy(true);
+          try {
+            track('account_deleted');
+            await flushAnalytics();   // before the rows are gone
+            await api.deleteMyAccount();
+            router.replace('/sign-in');
+          } catch (e) {
+            Alert.alert(t.you.deleteAccount, e instanceof Error ? e.message : t.common.retry);
+          } finally {
+            setBusy(false);
+          }
+        },
+      },
+    ]);
+  }
+
+  return (
+    <Pressable
+      onPress={confirm}
+      disabled={busy}
+      accessibilityRole="button"
+      accessibilityLabel={t.you.deleteAccount}
+      style={({ pressed }) => [
+        styles.destructive,
+        { borderColor: theme.warn, opacity: pressed || busy ? 0.6 : 1 },
+      ]}
+    >
+      <Text style={[text.body, { color: theme.warn }]}>{t.you.deleteAccount}</Text>
+    </Pressable>
   );
 }
 
@@ -210,6 +266,14 @@ const styles = StyleSheet.create({
     borderLeftWidth: 3,
   },
   langs: { flexDirection: 'row', gap: space.md, marginTop: space.md },
+  destructive: {
+    marginTop: space.xxxl,
+    minHeight: MIN_TAP,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.md,
+    borderWidth: 1,
+  },
   lang: {
     flex: 1,
     minHeight: MIN_TAP,

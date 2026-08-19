@@ -282,3 +282,35 @@ export async function myReferrals(): Promise<
     coins: Number(r.coins ?? 0),
   }));
 }
+
+/**
+ * docs/METRICS.md §1.5 — is checkout live, or is the shop in its browse-only
+ * Phase 1 state? A server dial, so it flips without a store release.
+ */
+export async function shopIsOpen(): Promise<boolean> {
+  if (usingDemoData) return false;
+  return rpc<boolean>('shop_is_open', {});
+}
+
+/** §1.5 — the strongest proxy for purchase intent available before Phase 2. */
+export async function registerInterest(productId: string, contact?: string): Promise<void> {
+  if (usingDemoData) return;
+  const { error } = await supabase!.rpc('register_interest', {
+    p_product: productId,
+    p_contact: contact ?? null,
+  });
+  if (error) throw new Error(`register_interest: ${error.message}`);
+}
+
+/**
+ * docs/OPERATIONS.md §1.2 — in-app account deletion, mandatory on both stores.
+ *
+ * Erases everything personal and leaves the financial record anonymised, because
+ * coin_ledger is append-only and a ledger that can be erased is not a ledger.
+ */
+export async function deleteMyAccount(): Promise<void> {
+  if (usingDemoData) throw new Error('No Supabase project is configured yet.');
+  const { error } = await supabase!.rpc('delete_my_account');
+  if (error) throw new Error(`delete_my_account: ${error.message}`);
+  await supabase!.auth.signOut();
+}
