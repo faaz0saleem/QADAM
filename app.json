@@ -1,0 +1,34 @@
+{
+  "expo": {
+    "name": "Qadam",
+    "slug": "qadam",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "qadam",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#101828"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "pk.qadam.app",
+      "infoPlist": {
+        "NSHealthShareUsageDescription": "Qadam reads your step count so your walking can mint coins. Your health data is never sold and never used for advertising.",
+        "NSHealthUpdateUsageDescription": "Qadam does not write any health data."
+      }
+    },
+    "android": {
+      "package": "pk.qadam.app",
+      "adaptiveIcon": { "backgroundColor": "#101828" },
+      "permissions": ["android.permission.health.READ_STEPS", "android.permission.ACTIVITY_RECOGNITION"]
+    },
+    "plugins": ["expo-router", "expo-localization"],
+    "experiments": { "typedRoutes": true },
+    "extra": {
+      "note": "No location permission anywhere: §2 says no GPS. Steps come from the OS health store."
+    }
+  }
+}

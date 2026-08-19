@@ -65,9 +65,24 @@ async function applyMigrations() {
   return files.length;
 }
 
+// Database tests live next to this runner; pure unit tests live beside the code
+// they cover. Both run in one pass so `npm test` is the whole story.
+const UNIT_DIRS = [join(repoRoot, 'src', 'lib'), join(repoRoot, 'src', 'i18n')];
+
 async function testFiles() {
-  const files = (await readdir(here)).filter((f) => f.endsWith('.test.mjs')).sort();
-  return files.map((f) => join(here, f));
+  const found = [];
+  for (const dir of [here, ...UNIT_DIRS]) {
+    let entries = [];
+    try {
+      entries = await readdir(dir);
+    } catch {
+      continue; // directory not created yet
+    }
+    for (const f of entries.filter((n) => n.endsWith('.test.mjs')).sort()) {
+      found.push(join(dir, f));
+    }
+  }
+  return found;
 }
 
 function runTests(files) {
