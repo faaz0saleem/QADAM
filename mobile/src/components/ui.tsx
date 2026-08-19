@@ -16,6 +16,8 @@ export function Text({
   variant = 'body',
   numberOfLines,
   adjustsFontSizeToFit,
+  accessibilityLabel,
+  accessibilityLiveRegion,
 }: {
   children: ReactNode;
   style?: TextStyle | TextStyle[];
@@ -25,6 +27,10 @@ export function Text({
   numberOfLines?: number;
   /** Shrink to fit rather than wrap or clip. For the hero counter at 320px. */
   adjustsFontSizeToFit?: boolean;
+  /** What a screen reader announces instead of the raw digits. */
+  accessibilityLabel?: string;
+  /** Announce changes as they happen — for a counter that ticks. */
+  accessibilityLiveRegion?: 'none' | 'polite' | 'assertive';
 }) {
   const { locale } = useI18n();
   const isData = variant.startsWith('data') || variant === 'counter';
@@ -32,6 +38,8 @@ export function Text({
     <RNText
       numberOfLines={numberOfLines}
       adjustsFontSizeToFit={adjustsFontSizeToFit}
+      accessibilityLabel={accessibilityLabel}
+      accessibilityLiveRegion={accessibilityLiveRegion}
       style={[
         type[variant],
         { color: faint ? earning.textFaint : dim ? earning.textDim : earning.text },

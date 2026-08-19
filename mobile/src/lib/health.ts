@@ -1,5 +1,7 @@
 import { Platform } from 'react-native';
 
+import { pktDayStartIso } from './format';
+
 /**
  * README §7.1 — steps come from the OS health store, and only from there.
  *
@@ -121,6 +123,61 @@ async function iosRead(sinceDays: number): Promise<DailySteps[]> {
       resolve([...byDay.entries()].map(([date, steps]) => ({ date, steps: Math.round(steps) })));
     });
   });
+}
+
+/**
+ * Just today's total, as cheaply as the platform allows.
+ *
+ * This is the read behind the live counter, so it runs every few seconds while
+ * the app is open. readDailySteps() pulls three days of individual records and
+ * buckets them; doing that at 3-second intervals would be wasteful on the
+ * three-year-old Android §9.7 names as the real hardware.
+ */
+async function androidToday(): Promise<number> {
+  const hc = await import('react-native-health-connect');
+  await hc.initialize();
+
+  const from = pktDayStartIso();
+  const result = await hc.aggregateRecord({
+    recordType: 'Steps',
+    timeRangeFilter: { operator: 'between', startTime: from, endTime: new Date().toISOString() },
+  });
+  return Number((result as { COUNT_TOTAL?: number }).COUNT_TOTAL ?? 0);
+}
+
+async function iosToday(): Promise<number> {
+  const { default: AppleHealthKit } = await import('react-native-health');
+  const start = pktDayStartIso();
+
+  return new Promise((resolve) => {
+    AppleHealthKit.getDailyStepCountSamples({ startDate: start, ascending: true }, (error, results) => {
+      if (error || !results) return resolve(0);
+      const today = pktDay(new Date());
+      resolve(
+        Math.round(
+          results
+            .filter((sample) => pktDay(new Date(sample.startDate)) === today)
+            .reduce((total, sample) => total + sample.value, 0),
+        ),
+      );
+    });
+  });
+}
+
+/**
+ * Today's step count from the OS, for display only.
+ *
+ * Nothing here becomes coins. The server decides that from what it is sent and
+ * what its own rules allow (§13.2) — this is the number on the screen, which is
+ * a different thing and is allowed to move every three seconds.
+ */
+export async function readTodaySteps(): Promise<number | null> {
+  try {
+    return Platform.OS === 'android' ? await androidToday() : await iosToday();
+  } catch (e) {
+    console.warn('live step read failed', e);
+    return null;
+  }
 }
 
 // ── the interface the app uses ─────────────────────────────────────────────
