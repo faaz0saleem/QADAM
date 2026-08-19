@@ -124,8 +124,12 @@ app with the §9 design system across five tabs, bilingual EN/UR.
 the WhatsApp confirmation sender, and the client-side integrity provider. The
 last one means nothing mints on a hosted project yet — see `HUMAN_TASKS.md`.
 
-157 tests pass and the typecheck is clean:
+176 tests pass and the typecheck is clean:
 
 ```bash
 npm run check
 ```
+
+[`docs/definition-of-done.md`](./docs/definition-of-done.md) walks §12's ship
+criteria one by one with the evidence for each, and is honest about which three
+cannot be closed without a device.

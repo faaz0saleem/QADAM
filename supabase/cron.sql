@@ -51,6 +51,13 @@ select cron.schedule(
 --     );
 --   $$);
 
+--   select cron.schedule('send-notifications', '5,35 * * * *', $$
+--     select net.http_post(
+--       url     := 'https://<ref>.supabase.co/functions/v1/send-notifications',
+--       headers := jsonb_build_object('x-cron-secret', '<CRON_SECRET>')
+--     );
+--   $$);
+
 -- To inspect or remove:
 --   select * from cron.job;
 --   select cron.unschedule('refresh-leaderboards');

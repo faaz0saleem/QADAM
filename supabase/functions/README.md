@@ -77,3 +77,19 @@ that matters this much should not depend on which path reached dispatch.
 supabase secrets set COURIER=leopards \
   LEOPARDS_API_KEY=... LEOPARDS_API_PASSWORD=... COURIER_ORIGIN_CITY=Lahore
 ```
+
+## `send-notifications`
+
+Delivers the queued expiry and streak reminders through Expo Push. §4 calls the
+expiry warning our single best reactivation lever: the user about to lose their
+coins is exactly the user who finally has enough to want to spend them.
+
+Queueing and sending are separate on purpose — a push outage delays a reminder
+rather than losing it, and the unique key on (user, kind, dedupe_key) means a
+retry cannot nag anyone twice. Tokens that come back `DeviceNotRegistered` are
+dropped, because Expo rate-limits senders that keep pushing to uninstalled apps.
+
+```bash
+supabase functions deploy send-notifications
+# then schedule it a few minutes after queue_expiry_warnings (see supabase/cron.sql)
+```

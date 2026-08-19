@@ -3,6 +3,7 @@ import { AppState as RNAppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as api from './api';
 import { getHealthSource, PermissionState } from '../lib/health';
+import { registerForPush } from '../lib/push';
 import { pktDateString } from '../lib/dates';
 import type { CoinBatch, TodaySteps } from './types';
 
@@ -48,6 +49,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inFlight = useRef(false);
+  const pushAsked = useRef(false);
 
   const refresh = useCallback(async () => {
     try {
@@ -60,6 +62,14 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       setToday(t);
       setBatches(batch);
       setError(null);
+
+      // §4, §7.2: ask for push the first time there are coins to lose, not on
+      // first launch. A prompt shown before anyone has minted a coin gets
+      // denied, and on iOS it cannot be asked for again.
+      if (b > 0 && !pushAsked.current) {
+        pushAsked.current = true;
+        registerForPush().catch(() => {});
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Something went wrong');
     }
