@@ -14,9 +14,13 @@ declare
   v_id    uuid := gen_random_uuid();
   v_phone text := coalesce(p_phone, '+9230' || lpad((random() * 99999999)::bigint::text, 8, '0'));
 begin
+  -- The on_auth_user_created trigger creates the public.users row, exactly as it
+  -- will in production. Fill in the rest afterwards rather than racing it.
   insert into auth.users (id, phone) values (v_id, v_phone);
-  insert into public.users (id, phone, name, city, device_hash, created_at)
-  values (v_id, v_phone, 'Test User', p_city, p_device_hash, p_created_at);
+  update public.users
+     set name = 'Test User', city = p_city, device_hash = p_device_hash,
+         created_at = p_created_at
+   where id = v_id;
   return v_id;
 end $$;
 
@@ -81,4 +85,44 @@ language plpgsql as $$
 begin
   perform set_config('request.jwt.claims', '', true);
   set local role anon;
+end $$;
+
+-- Run a statement as a PostgREST role and report whether the database refused it.
+-- The role switch happens inside a subtransaction, so a refusal rolls it back and
+-- the test session is never left wearing someone else's hat.
+create or replace function tests.denied(p_role text, p_user uuid, p_sql text)
+returns boolean
+language plpgsql
+as $$
+declare v_denied boolean;
+begin
+  perform set_config('request.jwt.claims',
+    case when p_user is null then ''
+         else json_build_object('sub', p_user::text, 'role', p_role)::text end, true);
+  begin
+    execute format('set local role %I', p_role);
+    execute p_sql;
+    v_denied := false;
+  exception
+    when insufficient_privilege or undefined_function or undefined_table or undefined_column
+      then v_denied := true;
+  end;
+  set local role none;
+  return v_denied;
+end $$;
+
+-- How many rows a role can actually see through a query, after RLS.
+create or replace function tests.count_as(p_role text, p_user uuid, p_sql text)
+returns integer
+language plpgsql
+as $$
+declare v_n integer;
+begin
+  perform set_config('request.jwt.claims',
+    case when p_user is null then ''
+         else json_build_object('sub', p_user::text, 'role', p_role)::text end, true);
+  execute format('set local role %I', p_role);
+  execute format('select count(*)::int from (%s) _q', p_sql) into v_n;
+  set local role none;
+  return v_n;
 end $$;
