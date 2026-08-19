@@ -105,6 +105,16 @@ export const ur: Copy = {
     joinTeamCta: 'کوڈ سے شامل ہوں',
   },
 
+  challenge: {
+    title: 'مقابلہ',
+    endsIn: '{{days}} دن میں ختم',
+    endsToday: 'آج ختم',
+    prizeVoucher: '{{value}} روپے کا واؤچر',
+    sponsoredBy: '{{name}} کی جانب سے',
+    noEntry: 'نہ کچھ داخل کرنا ہے، نہ کچھ داؤ پر ہے۔',
+    otherScope: 'اس ہفتے آپ کے لیے نہیں',
+  },
+
   you: {
     title: 'آپ',
     language: 'زبان',

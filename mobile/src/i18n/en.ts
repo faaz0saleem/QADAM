@@ -103,6 +103,16 @@ export const en = {
     joinTeamCta: 'Join with a code',
   },
 
+  challenge: {
+    title: 'Challenge',
+    endsIn: 'Ends in {{days}} days',
+    endsToday: 'Ends today',
+    prizeVoucher: 'PKR {{value}} voucher',
+    sponsoredBy: 'Sponsored by {{name}}',
+    noEntry: 'Nothing to enter and nothing at stake.',
+    otherScope: 'Not yours this week',
+  },
+
   you: {
     title: 'You',
     language: 'Language',

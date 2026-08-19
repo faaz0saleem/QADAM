@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { Screen } from '@/components/Screen';
 import { Card, EmptyState, Row, Text } from '@/components/ui';
 import { Button } from '@/components/Button';
+import { ChallengeCard } from '@/components/ChallengeCard';
 import { earning, radius, space, MIN_TAP_TARGET } from '@/theme';
 import { useI18n, fill } from '@/i18n';
 import { useLeaderboard, type Period, type Scope } from '@/hooks/useLeaderboard';
@@ -35,6 +36,8 @@ export default function BoardScreen() {
 
   return (
     <Screen title={t.board.title} onRefresh={reload} refreshing={loading}>
+      <ChallengeCard />
+
       <Segmented
         options={SCOPES.map((s) => ({ value: s, label: scopeLabel[s] }))}
         value={scope}
