@@ -10,7 +10,14 @@
 
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
+import { readdir } from 'node:fs/promises';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { withRollback } from './helpers.mjs';
+
+const migrationsDir = join(
+  dirname(fileURLToPath(import.meta.url)), '..', '..', 'supabase', 'migrations',
+);
 
 /**
  * Relations a client may reach at TABLE level, and with which privileges.
@@ -224,5 +231,20 @@ describe('function privileges', () => {
         assert.equal(rows[0].reachable, false, `${fn} is callable by a client`);
       }
     });
+  });
+});
+
+describe('the lockdown migration stays last', () => {
+  test('nothing is applied after it', async () => {
+    // Everything in that file is "revoke the world, then hand back exactly what
+    // a client needs". A migration applied afterwards inherits Postgres's
+    // PUBLIC EXECUTE default and Supabase's table grants, which is precisely
+    // the hole it exists to close.
+    const files = (await readdir(migrationsDir)).filter((f) => f.endsWith('.sql')).sort();
+    assert.match(
+      files[files.length - 1],
+      /_lockdown\.sql$/,
+      `${files[files.length - 1]} runs after the lockdown migration — renumber it to sort before`,
+    );
   });
 });

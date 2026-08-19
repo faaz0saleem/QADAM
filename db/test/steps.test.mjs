@@ -323,3 +323,15 @@ describe('§6.1 the client cannot claim its own attestation', () => {
     });
   });
 });
+
+describe('a client cannot label its steps as ours', () => {
+  test('REJECTS an admin source from a client', async () => {
+    await withRollback(async (c) => {
+      const user = await makeUser(c);
+      await asUser(c, user, () =>
+        expectRejected(c, () =>
+          c.query(`select submit_steps(pkt_date() - 1, 5000, 'admin')`),
+          /unknown step source/));
+    });
+  });
+});

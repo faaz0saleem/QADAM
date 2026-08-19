@@ -184,3 +184,51 @@ describe('§7.5 courier status', () => {
     });
   });
 });
+
+describe('§7.5 a failed delivery returns the goods to the shelf', () => {
+  const stockOf = async (c, id) =>
+    (await c.query('select stock from products where id = $1', [id])).rows[0].stock;
+
+  test('a refusal restocks, even though it burns the coins', async () => {
+    await withRollback(async (c) => {
+      const user = await makeUser(c);
+      await c.query(`select credit_coins($1, 20000, 'steps')`, [user]);
+      const shirt = await makeProduct(c, { price: 3000, cost: 1000, stock: 10 });
+      const id = await placeOrder(c, user, [{ product_id: shirt, qty: 2 }], { coins: 20000 });
+      await flushDeferred(c);
+      assert.equal(await stockOf(c, shirt), 8);
+      const after = await balance(c, user);
+
+      await c.query(`select set_order_status($1, 'refused')`, [id]);
+
+      assert.equal(await stockOf(c, shirt), 10, 'the parcel came back to us');
+      assert.equal(await balance(c, user), after, 'and the coins are still gone (§7.5)');
+    });
+  });
+
+  test('an RTO restocks too', async () => {
+    await withRollback(async (c) => {
+      const user = await makeUser(c);
+      const shirt = await makeProduct(c, { price: 3000, cost: 1000, stock: 5 });
+      const id = await placeOrder(c, user, [{ product_id: shirt, qty: 1 }]);
+      await flushDeferred(c);
+      assert.equal(await stockOf(c, shirt), 4);
+
+      await c.query(`select set_order_status($1, 'returned')`, [id]);
+      assert.equal(await stockOf(c, shirt), 5);
+    });
+  });
+
+  test('a delivery does not restock', async () => {
+    await withRollback(async (c) => {
+      const user = await makeUser(c);
+      const shirt = await makeProduct(c, { price: 3000, cost: 1000, stock: 5 });
+      const id = await placeOrder(c, user, [{ product_id: shirt, qty: 1 }]);
+      await flushDeferred(c);
+      await c.query(`select set_order_status($1, 'confirmed')`, [id]);
+      await c.query(`select set_order_status($1, 'dispatched')`, [id]);
+      await c.query(`select set_order_status($1, 'delivered')`, [id]);
+      assert.equal(await stockOf(c, shirt), 4);
+    });
+  });
+});
