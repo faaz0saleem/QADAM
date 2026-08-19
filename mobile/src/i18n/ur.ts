@@ -1,0 +1,107 @@
+import type { Copy } from './en';
+
+/**
+ * Urdu, shipped from day one — §9.3: an English-only launch cuts the addressable
+ * market in half.
+ *
+ * Typed against the English copy, so a missing or renamed key is a compile error
+ * rather than an English string appearing mid-sentence in an Urdu screen.
+ *
+ * HUMAN_TASKS.md carries a P2 for a native speaker to review every line of this.
+ * Machine-shaped Urdu in a financial context reads as untrustworthy.
+ */
+export const ur: Copy = {
+  tabs: {
+    steps: 'قدم',
+    board: 'درجہ بندی',
+    wallet: 'بٹوہ',
+    you: 'آپ',
+  },
+
+  steps: {
+    title: 'آج',
+    stepsLabel: 'قدم آج',
+    towardCap: 'آج {{cap}} میں سے {{current}} شمار ہوئے',
+    capReached: 'آج کے تمام قدم شمار ہو چکے ہیں',
+    coinsToday: 'آج بنے',
+    streak: '{{days}} دن کا سلسلہ',
+    streakNone: 'ابھی کوئی سلسلہ نہیں',
+    streakAtRisk: 'سلسلہ برقرار رکھنے کے لیے {{steps}} قدم اور چلیں',
+    lastSynced: '{{when}} مطابقت ہوئی',
+    syncing: 'مطابقت جاری ہے',
+    syncQueued: 'محفوظ ہو گیا۔ آن لائن آتے ہی بھیج دیا جائے گا۔',
+  },
+
+  permission: {
+    title: 'قدم کو آپ کے قدموں کی تعداد چاہیے',
+    bodyAndroid:
+      'قدم آپ کے قدم Health Connect سے پڑھتا ہے۔ اس کے بغیر سکے بنانے کے لیے کچھ نہیں ہوتا۔',
+    bodyIos: 'قدم آپ کے قدم Apple Health سے پڑھتا ہے۔ اس کے بغیر سکے بنانے کے لیے کچھ نہیں ہوتا۔',
+    cta: 'قدموں تک رسائی دیں',
+    settings: 'ترتیبات کھولیں',
+    noLocation: 'قدم کبھی آپ کے مقام کی اجازت نہیں مانگتا۔',
+  },
+
+  wallet: {
+    title: 'بٹوہ',
+    balance: 'سکے',
+    empty: 'اپنے پہلے سکے بنانے کے لیے 1,000 قدم چلیں۔',
+    expiringSoon: '{{coins}} سکے {{days}} دن میں ختم ہو جائیں گے',
+    expiringToday: '{{coins}} سکے آج ختم ہو رہے ہیں',
+    batchMinted: '{{when}} بنے',
+    expiresOn: '{{date}} کو ختم',
+    history: 'تاریخ',
+    reasonSteps: 'چلنا',
+    reasonRewardedAd: 'ویڈیو',
+    reasonReferralReferrer: 'حوالہ',
+    reasonReferralReferee: 'خوش آمدید سکے',
+    reasonChallengePrize: 'مقابلے کا انعام',
+    reasonOrderPending: 'آرڈر پر استعمال ہوئے',
+    reasonAdjustment: 'ترمیم',
+    lockedUntil: 'سکے {{date}} کو کھلیں گے',
+    lockedWhy: 'نئے اکاؤنٹ سات دن بعد سکے خرچ کر سکتے ہیں۔',
+  },
+
+  board: {
+    title: 'درجہ بندی',
+    scopeCity: 'شہر',
+    scopeTeam: 'ٹیم',
+    scopeFriends: 'دوست',
+    scopeNational: 'پورا پاکستان',
+    weekly: 'اس ہفتے',
+    allTime: 'ہمیشہ سے',
+    resetsMonday: 'پیر کو دوبارہ شروع',
+    youRank: '{{rank}} — اوپر کے {{percentile}}%',
+    youUnranked: 'اس ہفتے شامل ہونے کے لیے آج چلیں',
+    emptyTeam: 'ٹیم بنائیں اور یہ بھر جائے گی۔',
+    emptyFriends: 'دوست شامل کریں اور مقابلہ کریں۔',
+    noTeamCta: 'ٹیم بنائیں',
+    joinTeamCta: 'کوڈ سے شامل ہوں',
+  },
+
+  you: {
+    title: 'آپ',
+    language: 'زبان',
+    english: 'English',
+    urdu: 'اردو',
+    restartForRtl: 'سمت بدلنے کے لیے قدم دوبارہ کھلے گا۔',
+    team: 'ٹیم',
+    noTeam: 'آپ ابھی کسی ٹیم میں نہیں ہیں۔',
+    inviteCode: 'دعوتی کوڈ',
+    referral: 'دوست کو بلائیں',
+    referralCode: 'آپ کا کوڈ',
+    referralExplainer:
+      'جب وہ اپنا پہلا آرڈر دیں اور وہ پہنچ جائے تو آپ دونوں کو 500 سکے ملیں گے۔',
+    referralPending: '{{name}} شامل ہو گئے — ان کے پہلے آرڈر پر آپ کو 500 سکے ملیں گے',
+    referralPaid: '{{name}} — 500 سکے بن گئے',
+    city: 'شہر',
+    signOut: 'سائن آؤٹ',
+  },
+
+  errors: {
+    healthOff: 'صحت کی اجازت بند ہے، اس لیے آج کے قدم شمار نہیں ہو رہے۔',
+    healthOffCta: 'اسے آن کریں',
+    offline: 'آپ آف لائن ہیں۔ قدم محفوظ ہیں اور بعد میں بھیج دیے جائیں گے۔',
+    generic: 'کچھ غلط ہو گیا۔ دوبارہ کوشش کے لیے نیچے کھینچیں۔',
+  },
+};

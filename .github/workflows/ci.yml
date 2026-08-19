@@ -54,3 +54,22 @@ jobs:
 
       - name: Lint
         run: deno lint supabase/functions
+
+  app:
+    name: App typecheck and §9 design rules
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install app dependencies
+        working-directory: mobile
+        run: npm ci
+
+      - name: Typecheck
+        working-directory: mobile
+        run: npx tsc --noEmit
+
+      # §9.2 brass is coin-only, §9.6 forbidden words, §2 no location APIs.
+      # Enforced the same way §0 is: mechanically, not by remembering.
+      - name: Design rules
+        run: python3 scripts/check-design.py

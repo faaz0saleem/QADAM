@@ -9,7 +9,10 @@
     "db:reset": "./scripts/db.sh reset",
     "db:psql": "./scripts/db.sh psql",
     "test": "./scripts/test.sh",
-    "test:db": "./scripts/test.sh"
+    "test:db": "./scripts/test.sh",
+    "check:design": "python3 scripts/check-design.py",
+    "app:typecheck": "npm --prefix mobile run typecheck",
+    "app:start": "npm --prefix mobile run start"
   },
   "engines": {
     "node": ">=20"

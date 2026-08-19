@@ -65,10 +65,16 @@ supabase/
   migrations/              numbered, forward-only. Never edit an applied migration.
   tests/                   pgTAP. `_bootstrap.sql` shims Supabase-isms locally.
   functions/               Deno Edge Functions. See functions/README.md.
+mobile/                    the Expo app. Phase 1 = the earning half, no store.
+  src/theme/               §9.2 tokens and §9.3 type. The only source of colour.
+  src/components/Coin.tsx  the ONLY file allowed to use brass.
+  src/i18n/                en + ur, typed so a missing key will not compile.
+  app/                     expo-router routes. Four tabs; Shop arrives in Phase 2.
 scripts/
   db.sh                    start/stop/reset a local Postgres 16 test cluster
   test.sh                  reset → migrate → run every pgTAP test file
-.github/workflows/ci.yml   pgTAP suite + Deno typecheck, on every push
+  check-design.py          §9.2 brass discipline, §9.6 forbidden words, §2 no GPS
+.github/workflows/ci.yml   pgTAP + Deno + app typecheck + design rules, every push
 ```
 
 ## Two rules about the schema boundary
