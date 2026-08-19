@@ -1,6 +1,6 @@
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
-import { earning, radius, space } from '@/theme';
+import { radius, space, useSurface } from '@/theme';
 import { Text } from './ui';
 import { Button } from './Button';
 
@@ -22,11 +22,12 @@ export function Notice({
   actionLabel?: string;
   onAction?: () => void;
 }) {
+  const surface = useSurface();
   const accent =
-    tone === 'bad' ? earning.bad : tone === 'good' ? earning.good : earning.rule;
+    tone === 'bad' ? surface.bad : tone === 'good' ? surface.good : surface.rule;
 
   return (
-    <View style={[styles.notice, { borderLeftColor: accent }]}>
+    <View style={[styles.notice, { borderLeftColor: accent, backgroundColor: surface.raised }]}>
       <Text variant="bodySmall">{message}</Text>
       {actionLabel && onAction ? (
         <Button variant="quiet" label={actionLabel} onPress={onAction} style={styles.action} />
@@ -43,16 +44,16 @@ export function Notice({
  * for long enough to read as a broken layout.
  */
 export function Loading() {
+  const surface = useSurface();
   return (
     <View style={styles.loading}>
-      <ActivityIndicator color={earning.textFaint} />
+      <ActivityIndicator color={surface.textFaint} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   notice: {
-    backgroundColor: earning.raised,
     borderRadius: radius.md,
     borderLeftWidth: 2,
     padding: space.lg,

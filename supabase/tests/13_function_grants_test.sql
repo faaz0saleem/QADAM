@@ -42,8 +42,8 @@ select is(
   || 'my_orders, my_rank, my_referral_code, my_referrals, my_streak_days, '
   || 'my_team, order_coin_state, pkt_date, pkt_day_start, pkt_week_start, '
   || 'place_order, register_push_token, remove_friend, request_account_deletion, '
-  || 'team_roster',
-  'the signed-in callable surface is exactly these thirty-one functions');
+  || 'store_feed, team_roster',
+  'the signed-in callable surface is exactly these thirty-two functions');
 
 -- The earning path is the one that must not be reachable, and it is the one an
 -- attacker would look for first.

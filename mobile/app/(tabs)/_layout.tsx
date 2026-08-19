@@ -10,9 +10,9 @@ import { useForegroundSync } from '@/hooks/useSteps';
 /**
  * §9.4 — five bottom tabs: Steps · Board · Shop · Wallet · You.
  *
- * FOUR of them ship in Phase 1. §10 is explicit: "The earning app, no store at
- * all. Ship this and stop." The Shop tab arrives with Phase 2 and slots between
- * Board and Wallet; nothing else moves when it does.
+ * Shop sits between Board and Wallet, which is also the seam between the two
+ * temperatures of §9.1: everything left of it is the dark earning half,
+ * everything from it rightward touches the light spending one.
  *
  * Built on expo-router's headless tabs rather than the stock tab bar, because
  * the stock one is an icon row and §9.1 asks for something else: the visual
@@ -35,6 +35,9 @@ export default function TabsLayout() {
           </TabTrigger>
           <TabTrigger name="board" href="/board" asChild>
             <TabButton label={t.tabs.board} />
+          </TabTrigger>
+          <TabTrigger name="shop" href="/shop" asChild>
+            <TabButton label={t.tabs.shop} />
           </TabTrigger>
           <TabTrigger name="wallet" href="/wallet" asChild>
             <TabButton label={t.tabs.wallet} />

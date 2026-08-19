@@ -1,6 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 
-import { earning, radius } from '@/theme';
+import { radius, useSurface } from '@/theme';
 
 /**
  * §9.4 — "A horizontal progress rule toward the daily cap (a ruled ledger line
@@ -24,27 +24,35 @@ export function LedgerRule({
   progress,
   height = 6,
   divisions = 5,
-  filledColor = earning.ruleFilled,
+  filledColor,
 }: LedgerRuleProps) {
+  const surface = useSurface();
   const clamped = Math.max(0, Math.min(1, progress));
 
   return (
     <View
-      style={[styles.track, { height, borderRadius: radius.sm }]}
+      style={[styles.track, { height, borderRadius: radius.sm, backgroundColor: surface.rule }]}
       accessibilityRole="progressbar"
       accessibilityValue={{ min: 0, max: 100, now: Math.round(clamped * 100) }}
     >
       <View
         style={[
           styles.fill,
-          { width: `${clamped * 100}%`, backgroundColor: filledColor, borderRadius: radius.sm },
+          {
+            width: `${clamped * 100}%`,
+            backgroundColor: filledColor ?? surface.ruleFilled,
+            borderRadius: radius.sm,
+          },
         ]}
       />
       {/* The ruling. Sits above the fill, so the line reads as marked-off
           distance rather than as a bar that happens to have notches. */}
       <View style={styles.ticks} pointerEvents="none">
         {Array.from({ length: Math.max(0, divisions - 1) }, (_, i) => (
-          <View key={i} style={[styles.tick, { left: `${((i + 1) / divisions) * 100}%` }]} />
+          <View
+            key={i}
+            style={[styles.tick, { left: `${((i + 1) / divisions) * 100}%`, backgroundColor: surface.bg }]}
+          />
         ))}
       </View>
     </View>
@@ -52,19 +60,8 @@ export function LedgerRule({
 }
 
 const styles = StyleSheet.create({
-  track: {
-    width: '100%',
-    backgroundColor: earning.rule,
-    overflow: 'hidden',
-  },
+  track: { width: '100%', overflow: 'hidden' },
   fill: { height: '100%' },
   ticks: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
-  tick: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    width: 1,
-    backgroundColor: earning.bg,
-    opacity: 0.9,
-  },
+  tick: { position: 'absolute', top: 0, bottom: 0, width: 1, opacity: 0.9 },
 });

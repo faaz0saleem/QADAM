@@ -120,6 +120,13 @@ export default function YouScreen() {
         <Button variant="quiet" label={t.friends.addTitle} onPress={() => router.push('/friends')} />
       </Card>
 
+      <Card>
+        <Text variant="sectionTitle" dim>
+          {t.shop.ordersTitle}
+        </Text>
+        <Button variant="quiet" label={t.shop.ordersTitle} onPress={() => router.push('/orders')} />
+      </Card>
+
       {/*
         §7.7 — show pending referrals, so the referrer keeps nudging. The copy
         says exactly what has to happen and who has to do it.
