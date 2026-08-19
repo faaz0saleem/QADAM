@@ -5,6 +5,8 @@ import { createStore, useStore } from '@/lib/store';
 import { syncSteps } from '@/lib/sync';
 import { lastSyncedAt } from '@/lib/queue';
 import { requestStepPermission, type HealthStatus } from '@/lib/health';
+import { hasBeenAsked, registerForPush } from '@/lib/notifications';
+import { registerBackgroundSync } from '@/lib/background';
 import { refreshWallet, walletStore } from './useWallet';
 import { pktToday } from '@/lib/format';
 
@@ -49,6 +51,13 @@ export async function sync(): Promise<void> {
     // The pinned header balance comes from the same round trip the steps did,
     // so the coin count and the balance can never disagree on screen.
     if (result.ok) walletStore.set({ balance: result.balance });
+
+    // §4 — ask for notifications the moment there is something worth being
+    // notified about, and never before. A permission asked on first launch,
+    // with nothing yet to lose, is a permission denied forever.
+    if (result.ok && (today?.coins_awarded ?? 0) > 0 && !(await hasBeenAsked())) {
+      await registerForPush();
+    }
   } finally {
     stepStore.set({ syncing: false });
   }
@@ -80,6 +89,9 @@ export function useForegroundSync() {
       stepStore.set({ permission: status, lastSynced: await lastSyncedAt() });
       if (status === 'granted') await sync();
       await refreshWallet();
+      // §7.1's other half: steps keep reaching the server on a day the app is
+      // never opened, so the streak survives it.
+      await registerBackgroundSync();
       setReady(true);
     })();
 

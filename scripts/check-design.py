@@ -29,6 +29,11 @@ BRASS_TOKEN = 'COIN_BRASS'
 # The only two files allowed to know about brass.
 BRASS_DEFINITION = APP / 'src' / 'theme' / 'tokens.ts'
 BRASS_CONSUMER = APP / 'src' / 'components' / 'Coin.tsx'
+# The Android notification channel accent. The notifications it colours are about
+# coins expiring, which is what brass is for — so it is an exception with a
+# reason, given its own named file so it stays visible instead of buried in a
+# settings object.
+BRASS_NOTIFICATION_CHANNEL = APP / 'src' / 'lib' / 'notification-colour.ts'
 
 FORBIDDEN_WORDS = [
     (r'\bpoints?\b', 'points'),
@@ -51,7 +56,11 @@ def sources() -> list[pathlib.Path]:
 
 
 def check_brass() -> None:
-    allowed = {BRASS_DEFINITION.resolve(), BRASS_CONSUMER.resolve()}
+    allowed = {
+        BRASS_DEFINITION.resolve(),
+        BRASS_CONSUMER.resolve(),
+        BRASS_NOTIFICATION_CHANNEL.resolve(),
+    }
     for path in sources():
         if path.resolve() in allowed:
             continue

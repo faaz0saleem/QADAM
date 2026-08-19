@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { useRouter } from 'expo-router';
 
 import { Screen } from '@/components/Screen';
 import { Card, EmptyState, Row, Text } from '@/components/ui';
+import { Button } from '@/components/Button';
 import { earning, radius, space, MIN_TAP_TARGET } from '@/theme';
 import { useI18n, fill } from '@/i18n';
 import { useLeaderboard, type Period, type Scope } from '@/hooks/useLeaderboard';
@@ -19,6 +21,7 @@ const SCOPES: Scope[] = ['city', 'team', 'friends', 'national'];
 
 export default function BoardScreen() {
   const { t } = useI18n();
+  const router = useRouter();
   const [scope, setScope] = useState<Scope>('city');
   const [period, setPeriod] = useState<Period>('week');
   const { rows, mine, loading, reload } = useLeaderboard(scope, period);
@@ -79,9 +82,18 @@ export default function BoardScreen() {
       </Card>
 
       {rows.length === 0 && !loading ? (
-        <EmptyState>
-          {scope === 'team' ? t.board.emptyTeam : scope === 'friends' ? t.board.emptyFriends : ''}
-        </EmptyState>
+        // §9.6 — empty states are invitations. An empty team board with no way
+        // to start a team is an apology with extra steps.
+        <View style={styles.emptyBlock}>
+          <EmptyState>
+            {scope === 'team' ? t.board.emptyTeam : scope === 'friends' ? t.board.emptyFriends : ''}
+          </EmptyState>
+          {scope === 'team' ? (
+            <Button label={t.board.noTeamCta} onPress={() => router.push('/team')} />
+          ) : scope === 'friends' ? (
+            <Button label={t.friends.addCta} onPress={() => router.push('/friends')} />
+          ) : null}
+        </View>
       ) : (
         <View style={styles.list}>
           {rows.map((row) => (
@@ -156,6 +168,7 @@ const styles = StyleSheet.create({
   },
   segmentActive: { backgroundColor: earning.raised },
   pinned: { borderLeftWidth: 2, borderLeftColor: earning.ruleFilled },
+  emptyBlock: { gap: space.md },
   list: { gap: space.md },
   row: { paddingVertical: space.xs },
   // Ranks are right-aligned in a fixed gutter so the column of numbers is a

@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { useRouter } from 'expo-router';
 
 import { Screen } from '@/components/Screen';
 import { Card, Divider, Row, Text } from '@/components/ui';
+import { Button } from '@/components/Button';
 import { earning, radius, space, MIN_TAP_TARGET } from '@/theme';
 import { useI18n, fill, type Locale } from '@/i18n';
 import { supabase } from '@/lib/supabase';
@@ -16,6 +18,7 @@ interface Referral {
 
 export default function YouScreen() {
   const { t, locale, setLocale } = useI18n();
+  const router = useRouter();
   const [code, setCode] = useState<string | null>(null);
   const [referrals, setReferrals] = useState<Referral[]>([]);
   const [team, setTeam] = useState<{ name: string; invite_code: string } | null>(null);
@@ -71,6 +74,18 @@ export default function YouScreen() {
             {t.you.noTeam}
           </Text>
         )}
+        <Button
+          variant="quiet"
+          label={team ? t.team.title : t.board.noTeamCta}
+          onPress={() => router.push('/team')}
+        />
+      </Card>
+
+      <Card>
+        <Text variant="sectionTitle" dim>
+          {t.friends.title}
+        </Text>
+        <Button variant="quiet" label={t.friends.addTitle} onPress={() => router.push('/friends')} />
       </Card>
 
       {/*
