@@ -1,0 +1,47 @@
+# dependencies
+node_modules/
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/releases
+
+# secrets — never commit
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# expo / react native
+.expo/
+dist/
+web-build/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+ios/
+android/
+
+# supabase local
+supabase/.branches/
+supabase/.temp/
+supabase/.env
+
+# local postgres test cluster
+.pgdata/
+.pgsock/
+*.pglog
+
+# build / test output
+coverage/
+*.tsbuildinfo
+.tap/
+
+# editors / os
+.DS_Store
+*.swp
+.idea/
+.vscode/*
+!.vscode/extensions.json

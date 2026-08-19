@@ -1,0 +1,17 @@
+{
+  "name": "qadam",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Walk, mint coins, spend them as a margin-capped discount. Pakistan.",
+  "scripts": {
+    "db:start": "./scripts/db.sh start",
+    "db:stop": "./scripts/db.sh stop",
+    "db:reset": "./scripts/db.sh reset",
+    "db:psql": "./scripts/db.sh psql",
+    "test": "./scripts/test.sh",
+    "test:db": "./scripts/test.sh"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
