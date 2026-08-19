@@ -27,6 +27,11 @@ jobs:
       - name: Apply every migration to a scratch database and run the suite
         run: ./scripts/test.sh
 
+      # pgTAP runs in one transaction, which is the wrong shape for testing what
+      # two phones syncing at once do to one wallet. These open real sessions.
+      - name: Concurrency checks
+        run: ./scripts/test-concurrency.sh
+
       - name: Stop the cluster
         if: always()
         run: ./scripts/db.sh stop || true

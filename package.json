@@ -14,7 +14,8 @@
     "app:typecheck": "npm --prefix mobile run typecheck",
     "app:start": "npm --prefix mobile run start",
     "app:test": "npm --prefix mobile test",
-    "check": "./scripts/test.sh && npm --prefix mobile run typecheck && npm --prefix mobile test && python3 scripts/check-design.py"
+    "check": "./scripts/test.sh && ./scripts/test-concurrency.sh && npm --prefix mobile run typecheck && npm --prefix mobile test && python3 scripts/check-design.py",
+    "test:concurrency": "./scripts/test-concurrency.sh"
   },
   "engines": {
     "node": ">=20"
