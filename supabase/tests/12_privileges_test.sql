@@ -13,7 +13,7 @@
 -- cost on everything a customer ever bought.
 -- ============================================================================
 begin;
-select plan(9);
+select plan(11);
 
 -- ── the two things that must never be reachable ────────────────────────────
 select is(
@@ -106,6 +106,28 @@ select is(
   '',
   'fraud_events, leaderboard_snap, order_economics and notifications_sent are '
   'reachable only through functions, never directly');
+
+-- ── no policy is wider than the thing it protects ──────────────────────────
+-- `using (true)` is correct for the catalogue and for public team info, and
+-- wrong for anything about a person. Listing the exceptions means a new one has
+-- to be argued for here rather than written in passing.
+select is(
+  (select string_agg(tablename, ', ' order by tablename)
+     from pg_policies
+    where schemaname = 'public' and qual = 'true'),
+  'categories, challenges, teams',
+  'only the catalogue and public team info are readable without a WHERE clause');
+
+-- Every other policy has to mention the caller. A policy on a per-person table
+-- that never says auth.uid() is a policy that is not scoping anything.
+select is(
+  (select string_agg(tablename || '.' || policyname, ', ' order by tablename)
+     from pg_policies
+    where schemaname = 'public'
+      and tablename not in ('categories', 'challenges', 'teams', 'brands', 'products')
+      and coalesce(qual, '') not like '%auth.uid()%'),
+  null,
+  'every per-person policy scopes on auth.uid()');
 
 select * from finish();
 rollback;

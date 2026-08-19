@@ -28,12 +28,15 @@ export default function YouScreen() {
       const [codeRes, refRes, teamRes] = await Promise.all([
         supabase.rpc('my_referral_code'),
         supabase.rpc('my_referrals'),
-        supabase.from('team_members').select('teams(name, invite_code)').maybeSingle(),
+        // Through the RPC rather than the table: team_members is scoped to your
+        // own row, and reading a team's name through a join would have needed a
+        // policy that let anyone enumerate every membership.
+        supabase.rpc('my_team'),
       ]);
       setCode(typeof codeRes.data === 'string' ? codeRes.data : null);
       setReferrals((refRes.data ?? []) as Referral[]);
-      const joined = teamRes.data as { teams?: { name: string; invite_code: string } } | null;
-      setTeam(joined?.teams ?? null);
+      const teams = (teamRes.data ?? []) as Array<{ name: string; invite_code: string }>;
+      setTeam(teams[0] ?? null);
     })();
   }, []);
 
