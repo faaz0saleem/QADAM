@@ -12,12 +12,19 @@ it against the real world. **not started** = exactly that.
 
 ### ☑ A violating discount is rejected by the database, proven by a passing test
 
-**Proven.** `supabase/tests/01_margin_cap_test.sql`, 35 assertions.
+**Proven twice over.** `01_margin_cap_test.sql` (35 assertions) and
+`11_margin_property_test.sql` (12).
 
-Covers the arithmetic at both boundaries, the PKR 94,000 phone that caps at 1.1%
-of price, rejection one rupee over the cap, and the two routes around the cap
-that matter: a forged cost on the order line, and a discount moved off the lines
-onto the order header. `./scripts/seed.sh` then shows it holding on real rows.
+The first covers the arithmetic at both boundaries, the PKR 94,000 phone that
+caps at 1.1% of price, rejection one rupee over the cap, and the two routes
+around the cap that matter: a forged cost on the order line, and a discount
+moved off the lines onto the header.
+
+The second sweeps a grid from a PKR 50 sachet to a PKR 500,000 laptop at margins
+from 1% to 90%, and checks §3.3's claim holds on every point of it — not merely
+that gross profit stays non-negative, but that at least 80% of margin always
+survives. Sixty of those pairs then go through the real constraint as order
+lines: accepted at the cap, rejected one rupee over.
 
 ### ☐ Steps sync on both platforms, survive app restart, and queue while offline
 
@@ -102,6 +109,32 @@ simulator. Nothing has been measured. The choices that should help — no
 Reanimated, native-driver animations only, no parallax, snapshotted leaderboards
 rather than ranking on read — are choices, not evidence.
 
+### ☑ Nothing else is reachable either — three inventories
+
+**Proven, and each found something.** This is not a §12 item; it is the thing
+§12 assumes.
+
+`12_privileges_test.sql` enumerates every table and column any client role can
+read or write. It found `order_items.cost_pkr` granted to `authenticated` —
+every customer could read our cost on everything they had ever bought.
+`13_function_grants_test.sql` enumerates every callable function and found a
+private trigger function left world-executable by Postgres's own default. The
+policy assertions pin `using (true)` to the three tables where it belongs.
+
+Spot-checks find what someone thought to check. These enumerate, so widening the
+client surface means editing a list on purpose.
+
+### ☑ It behaves under concurrency
+
+**Proven.** `scripts/test-concurrency.sh`, nine checks in real parallel sessions
+— which pgTAP cannot do, because it runs everything in one transaction.
+
+Two phones syncing the same day mint 100 coins rather than 200. Five concurrent
+spends of 30 against a balance of 100 let exactly three through, leaving 10 and
+not minus 20. A replayed AdMob callback pays once. I had reasoned all of this
+out from the row locks beforehand; the five-way race is the one that would have
+caught me being wrong.
+
 ### ☑ `HUMAN_TASKS.md` is current
 
 **Proven by being maintained.** It carries the blocking items, the slow-start
@@ -113,8 +146,9 @@ reasoning so they can be overturned.
 ## The honest summary
 
 Everything that can be enforced by the database or a script is enforced and
-proven: 248 pgTAP assertions, 30 jest tests, and a design checker, all run by
-`npm run check`.
+proven: 307 pgTAP assertions, 9 concurrency checks in real parallel sessions, 18
+Deno tests over the signature parsing, 36 jest tests, and a design checker — all
+run by `npm run check`.
 
 Everything that needs a phone is unproven. That is not a gap in the work so much
 as a wall: **the next real progress on this list needs a Supabase project, an
