@@ -119,3 +119,32 @@ describe('§9.7 the quality floor', () => {
     assert.deepEqual(offenders, []);
   });
 });
+
+describe('§9.3 the fonts are actually bundled', () => {
+  test('every family named in a text style is in the asset map', async () => {
+    // React Native falls back silently on an unknown family name, so a typo
+    // between type.ts and fonts.ts costs the whole typographic system and
+    // nothing reports it.
+    const source = await readFile(join(repoRoot, 'src', 'theme', 'fonts.ts'), 'utf8');
+    const bundled = new Set(
+      (source.match(/^\s{2}([A-Za-z]+_\d{3}[A-Za-z]+),$/gm) ?? [])
+        .map((line) => line.trim().replace(',', '')),
+    );
+
+    const named = new Set(Object.values(text).map((s) => s.fontFamily).filter(Boolean));
+    const missing = [...named].filter((f) => !bundled.has(f));
+    assert.deepEqual(missing, [], 'a text style names a font that is not bundled');
+  });
+
+  test('bundles no weight it does not use', async () => {
+    // Every extra file is download size on a connection that charges by the
+    // megabyte. The Urdu face is the exception: it is used through urduAdjust,
+    // not through a style in `text`.
+    const source = await readFile(join(repoRoot, 'src', 'theme', 'fonts.ts'), 'utf8');
+    const bundled = (source.match(/^\s{2}([A-Za-z]+_\d{3}[A-Za-z]+),$/gm) ?? [])
+      .map((line) => line.trim().replace(',', ''));
+    const named = new Set(Object.values(text).map((s) => s.fontFamily));
+    const unused = bundled.filter((f) => !named.has(f) && !f.startsWith('NotoNastaliq'));
+    assert.deepEqual(unused, [], 'these bundled weights are not used by any style');
+  });
+});

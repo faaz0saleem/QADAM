@@ -1,6 +1,11 @@
-import React, { useEffect } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
+import { View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { useFonts } from 'expo-font';
+import * as SplashScreen from 'expo-splash-screen';
+import { fontAssets } from '../src/theme/fonts';
+import { earning } from '../src/theme/tokens';
 import { I18nProvider } from '../src/i18n';
 import { AppStateProvider, useAppState } from '../src/data/AppState';
 import { CartProvider } from '../src/data/Cart';
@@ -30,9 +35,26 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+// Hold the splash until the fonts are in. §9.3 makes tabular figures
+// non-negotiable, and a first frame in the fallback face reflows every number on
+// the screen the moment the real one loads.
+SplashScreen.preventAutoHideAsync().catch(() => {});
+
 export default function RootLayout() {
+  const [fontsLoaded, fontError] = useFonts(fontAssets);
+
+  const onReady = useCallback(() => {
+    // Hide on an error too: shipping the app in a fallback face is bad, and
+    // holding a splash screen forever is worse.
+    if (fontsLoaded || fontError) SplashScreen.hideAsync().catch(() => {});
+  }, [fontsLoaded, fontError]);
+
+  if (!fontsLoaded && !fontError) {
+    return <View style={{ flex: 1, backgroundColor: earning.bg }} />;
+  }
+
   return (
-    <SafeAreaProvider>
+    <SafeAreaProvider onLayout={onReady}>
       <I18nProvider>
         <AppStateProvider>
           <CartProvider>
