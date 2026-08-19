@@ -75,9 +75,16 @@ describe('translations stay in step', () => {
 
   test('no Urdu string was left in English', () => {
     const enMap = new Map(leaves(en));
-    // A handful legitimately match: proper nouns, and the language names in the
-    // settings toggle, which are always shown in their own script.
-    const allowed = new Set(['you.english', 'you.urdu']);
+    // A handful legitimately match:
+    //   - the language names in the settings toggle, always in their own script
+    //   - input placeholders that are a format, not prose: a phone mask and an
+    //     invite code are the same characters whichever language you read
+    const allowed = new Set([
+      'you.english',
+      'you.urdu',
+      'signIn.phonePlaceholder',
+      'signIn.referralPlaceholder',
+    ]);
     const untranslated = [...leaves(ur)]
       .filter(([path, value]) => !allowed.has(path) && value === enMap.get(path))
       .map(([path]) => path);

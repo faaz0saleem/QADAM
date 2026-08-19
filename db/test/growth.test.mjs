@@ -151,3 +151,53 @@ describe('§7.7 pending referrals', () => {
     });
   });
 });
+
+describe('signup', () => {
+  test('creates a profile in the same transaction as the account', async () => {
+    await withRollback(async (c) => {
+      const { rows } = await c.query(
+        `insert into auth.users (phone) values ('+923009998877') returning id`);
+      const { rows: profile } = await c.query(
+        'select phone, referral_code from users where id = $1', [rows[0].id]);
+      assert.equal(profile.length, 1, 'a signed-in user must never lack a profile');
+      assert.equal(profile[0].phone, '+923009998877');
+      assert.match(profile[0].referral_code, /^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{6}$/);
+    });
+  });
+
+  test('carries a referral through signup without paying anything', async () => {
+    await withRollback(async (c) => {
+      const referrer = await makeUser(c);
+      const { rows: code } = await c.query(
+        'select referral_code from users where id = $1', [referrer]);
+
+      const { rows: created } = await c.query(
+        `insert into auth.users (phone) values ('+923009998866') returning id`);
+      // Simulate the metadata Supabase would carry from the signup call.
+      await c.query(
+        `update users set referred_by = (select id from users where referral_code = $1)
+         where id = $2`, [code[0].referral_code, created[0].id]);
+
+      const { rows: referee } = await c.query(
+        'select referred_by from users where id = $1', [created[0].id]);
+      assert.equal(referee[0].referred_by, referrer);
+      assert.equal(await balance(c, referrer), 0, '§7.7: install pays nobody');
+    });
+  });
+
+  test('a lowercase referral code still resolves', async () => {
+    await withRollback(async (c) => {
+      const referrer = await makeUser(c);
+      const { rows: code } = await c.query(
+        'select referral_code from users where id = $1', [referrer]);
+      const { rows } = await c.query(
+        `insert into auth.users (phone, raw_user_meta_data)
+         values ('+923009998855', jsonb_build_object('referral_code', lower($1), 'name', 'Bilal'))
+         returning id`, [code[0].referral_code]);
+      const { rows: referee } = await c.query(
+        'select referred_by, name from users where id = $1', [rows[0].id]);
+      assert.equal(referee[0].referred_by, referrer);
+      assert.equal(referee[0].name, 'Bilal');
+    });
+  });
+});

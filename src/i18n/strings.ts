@@ -24,6 +24,25 @@ export const en = {
     you: 'You',
   },
 
+  signIn: {
+    title: 'Your number',
+    body: 'We send a code by SMS. Your number is how we reach you about an order, and nothing else.',
+    phoneLabel: 'Mobile number',
+    phonePlaceholder: '03XX XXXXXXX',
+    send: 'Send code',
+    codeTitle: 'Enter the code',
+    codeSent: 'We sent a code to {{phone}}',
+    codeLabel: 'Six-digit code',
+    verify: 'Continue',
+    resend: 'Send it again',
+    changeNumber: 'Use a different number',
+    invalidPhone: "That doesn't look like a Pakistani mobile number.",
+    invalidCode: "That code didn't work. Check it and try again.",
+    tooManyTries: 'Too many attempts. Wait a minute and try again.',
+    referralPrompt: 'Have an invite code?',
+    referralPlaceholder: 'ABC123',
+  },
+
   steps: {
     title: 'Today',
     todayCoins: 'Minted today',
@@ -158,6 +177,25 @@ export const ur: Strings = {
     shop: 'دکان',
     wallet: 'بٹوہ',
     you: 'آپ',
+  },
+
+  signIn: {
+    title: 'آپ کا نمبر',
+    body: 'ہم ایس ایم ایس پر کوڈ بھیجتے ہیں۔ آپ کا نمبر صرف آرڈر کے بارے میں رابطے کے لیے ہے۔',
+    phoneLabel: 'موبائل نمبر',
+    phonePlaceholder: '03XX XXXXXXX',
+    send: 'کوڈ بھیجیں',
+    codeTitle: 'کوڈ درج کریں',
+    codeSent: 'ہم نے {{phone}} پر کوڈ بھیجا ہے',
+    codeLabel: 'چھ ہندسوں کا کوڈ',
+    verify: 'جاری رکھیں',
+    resend: 'دوبارہ بھیجیں',
+    changeNumber: 'دوسرا نمبر استعمال کریں',
+    invalidPhone: 'یہ پاکستانی موبائل نمبر نہیں لگتا۔',
+    invalidCode: 'یہ کوڈ کام نہیں کر سکا۔ دوبارہ دیکھ کر کوشش کریں۔',
+    tooManyTries: 'بہت زیادہ کوششیں۔ ایک منٹ بعد دوبارہ کوشش کریں۔',
+    referralPrompt: 'دعوتی کوڈ ہے؟',
+    referralPlaceholder: 'ABC123',
   },
 
   steps: {

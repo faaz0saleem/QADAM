@@ -48,11 +48,26 @@ grant usage on schema public to anon, authenticated, service_role;
 create schema if not exists auth;
 
 create table if not exists auth.users (
-  id           uuid primary key default gen_random_uuid(),
-  phone        text unique,
-  email        text unique,
-  created_at   timestamptz not null default now()
+  id                 uuid primary key default gen_random_uuid(),
+  phone              text unique,
+  email              text unique,
+  raw_user_meta_data jsonb not null default '{}',
+  created_at         timestamptz not null default now()
 );
+
+-- Only fires on a local shim that predates the column. On Supabase the column
+-- already exists, the check fails, and the ALTER — which this role may not be
+-- entitled to run against the auth schema — never executes.
+do $meta$
+begin
+  if not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'auth' and table_name = 'users' and column_name = 'raw_user_meta_data'
+  ) then
+    alter table auth.users add column raw_user_meta_data jsonb not null default '{}';
+  end if;
+end
+$meta$;
 
 -- auth.uid() -------------------------------------------------------------------
 -- Every RLS policy in this schema is written against auth.uid(). Supabase's own

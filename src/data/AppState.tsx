@@ -135,10 +135,19 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
   }, [sync]);
 
   useEffect(() => {
+    let authSub: { unsubscribe: () => void } | undefined;
+
     (async () => {
       const { supabase } = await import('../lib/supabase');
       const session = await supabase?.auth.getSession();
       setUserId(session?.data.session?.user.id ?? null);
+
+      // Keep userId in step with sign-in, sign-out and token refresh, rather
+      // than reading the session once at startup and going stale.
+      authSub = supabase?.auth.onAuthStateChange((_event, s) => {
+        setUserId(s?.user.id ?? null);
+      }).data.subscription;
+
       await sync();
       setReady(true);
     })();
@@ -146,7 +155,10 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     const sub = RNAppState.addEventListener('change', (s) => {
       if (s === 'active') sync();
     });
-    return () => sub.remove();
+    return () => {
+      sub.remove();
+      authSub?.unsubscribe();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
