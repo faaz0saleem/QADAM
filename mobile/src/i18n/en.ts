@@ -130,6 +130,12 @@ export const en = {
     referralPending: '{{name}} joined — you get 500 coins on their first order',
     referralPaid: '{{name}} — 500 coins minted',
     city: 'City',
+    deleteAccount: 'Delete account',
+    deleteTitle: 'Delete your account?',
+    deleteBody: 'Everything goes: your steps, your streak, your team, and your coins. Coins cannot be moved anywhere else, so they are destroyed. This cannot be undone.',
+    deleteConfirm: 'Delete everything',
+    deleteCancel: 'Keep my account',
+    deleteFailed: 'We could not delete your account just now. Try again in a moment.',
     signOut: 'Sign out',
   },
 
