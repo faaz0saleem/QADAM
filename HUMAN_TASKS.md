@@ -106,6 +106,20 @@ deleted, so you can see what has already been handled.
       alter database postgres set app.service_role_key   = '<service role key>';
       ```
 
+- [ ] **P1 · BLOCKING for orders** — WhatsApp Business template approved by Meta
+      Why: §7.5's confirmation is sent as an approved template, not free text, and
+      approval takes days. Name it `order_confirmation` (or set
+      `WHATSAPP_CONFIRM_TEMPLATE`), with two body variables — item count and
+      total — and two quick-reply buttons. Without it, no COD order over
+      PKR 3,000 can be dispatched at all, which is the gate working as intended.
+
+- [ ] **P1 · BLOCKING for orders** — `ORDER_WEBHOOK_SECRET`
+      Why: the webhook that decides whether coins are spent or burned refuses
+      every callback while it is unset. That is the safe default and it means
+      nothing moves until you set it.
+      How: generate a long random string, set it as an Edge Function secret, and
+      give the same value to the courier and to your WhatsApp relay.
+
 - [ ] **P2** — Point AdMob's server-side verification at the callback
       Why: rewarded video only pays out through a signature Google signs. Until the
       SSV URL is set, watching an ad credits nothing.
