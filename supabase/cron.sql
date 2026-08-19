@@ -30,6 +30,27 @@ select cron.schedule(
   $$select queue_streak_warnings();$$
 );
 
+-- §7.5: send queued pre-dispatch confirmations every five minutes. Scheduled
+-- rather than inline with checkout, so a WhatsApp outage delays a shipment
+-- instead of failing an order that is otherwise fine.
+--
+-- These two need the function URL and the CRON_SECRET, so fill them in after
+-- deploying:
+--
+--   select cron.schedule('send-confirmations', '*/5 * * * *', $$
+--     select net.http_post(
+--       url     := 'https://<ref>.supabase.co/functions/v1/send-confirmations',
+--       headers := jsonb_build_object('x-cron-secret', '<CRON_SECRET>')
+--     );
+--   $$);
+--
+--   select cron.schedule('dispatch-orders', '*/10 * * * *', $$
+--     select net.http_post(
+--       url     := 'https://<ref>.supabase.co/functions/v1/dispatch-order',
+--       headers := jsonb_build_object('x-cron-secret', '<CRON_SECRET>')
+--     );
+--   $$);
+
 -- To inspect or remove:
 --   select * from cron.job;
 --   select cron.unschedule('refresh-leaderboards');

@@ -28,3 +28,52 @@ zero coins.** That is deliberate — see `_shared/attest.ts`. It means the econo
 cannot be farmed before anti-fraud is real, which is what §6 asks for, but it
 also means nobody earns anything on a hosted project until the keys are set. The
 credentials are tracked in `HUMAN_TASKS.md`.
+
+## `send-confirmations`
+
+§7.5's pre-dispatch WhatsApp message, with confirm and cancel buttons. Runs on a
+schedule rather than inline with checkout, so a WhatsApp outage delays a shipment
+instead of failing an order that is otherwise fine — the database already refuses
+to dispatch an unconfirmed COD order above PKR 3,000, so nothing ships early.
+
+Two backends behind one interface, because §2 says WhatsApp Business API "or
+Twilio" and which one arrives first depends on approvals we do not control.
+
+```bash
+supabase secrets set \
+  WHATSAPP_PROVIDER=meta \
+  WHATSAPP_PHONE_NUMBER_ID=... WHATSAPP_ACCESS_TOKEN=... \
+  WHATSAPP_TEMPLATE_NAME=order_confirmation \
+  CRON_SECRET="$(openssl rand -hex 32)"
+```
+
+The template must be submitted to Meta and approved before first send — allow a
+week (`HUMAN_TASKS.md`).
+
+## `whatsapp-webhook`
+
+Receives the customer's reply. Public by necessity, so:
+
+- the request signature is verified against `WHATSAPP_APP_SECRET` with a
+  constant-time compare — without it anyone could confirm, or cancel, anyone's
+  order
+- the order is identified by the token carried in the button payload, never by
+  anything the sender says
+
+```bash
+supabase secrets set WHATSAPP_APP_SECRET=... WHATSAPP_VERIFY_TOKEN=...
+```
+
+## `dispatch-order`
+
+Books confirmed orders with whichever courier we have an account with (§2:
+"abstract behind one interface"). Adapters for TCS and Leopards are in
+`_shared/courier/`; `COURIER` selects one.
+
+The unconfirmed-COD gate lives in the database, not in this function — a rule
+that matters this much should not depend on which path reached dispatch.
+
+```bash
+supabase secrets set COURIER=leopards \
+  LEOPARDS_API_KEY=... LEOPARDS_API_PASSWORD=... COURIER_ORIGIN_CITY=Lahore
+```

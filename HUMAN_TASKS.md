@@ -76,8 +76,33 @@ Finished items move to [Done](#done) rather than being deleted.
       order above PKR 3,000, so without this, orders will pile up unshipped.
       How: Meta Business Manager → WhatsApp → or a BSP (360dialog and Twilio are
       both straightforward in Pakistan). You will need a verified business and a
-      dedicated number. Utility templates must be submitted and approved before
-      first send — allow a week.
+      dedicated number.
+      Then: submit a **utility template** named `order_confirmation` with two body
+      variables (item count, total) and two quick-reply buttons (Confirm, Cancel).
+      Approval takes days — submit it as soon as the number is verified, not when
+      you are ready to ship. Both backends are already written; set
+      `WHATSAPP_PROVIDER` to `meta` or `twilio` and the secrets in
+      `supabase/functions/README.md`.
+
+- [ ] **P2 · SECURITY** — Set `WHATSAPP_APP_SECRET` and `CRON_SECRET`
+      Why: the WhatsApp webhook is public by necessity. Without the app secret it
+      refuses every request (which is the safe failure), and with a wrong one
+      anyone who found the URL could confirm — or cancel — anyone's order.
+      How: Meta App Dashboard → Settings → Basic → App Secret. Generate the cron
+      secret with `openssl rand -hex 32`; it gates `send-confirmations` and
+      `dispatch-order`, which are otherwise open endpoints that spend money.
+
+- [ ] **P2** — Verify the courier adapter against your account's own docs
+      Why: `_shared/courier/tcs.ts` and `leopards.ts` follow the published
+      integration documents, but couriers in this market rename fields without
+      versioning anything. Book one real parcel and check the response shape
+      before trusting it with a day's orders.
+      Also decide: `record_courier_status` maps a *refusal* to burning the
+      customer's coins and a *return* to not burning them. Check that your
+      courier actually distinguishes the two — if their status list collapses
+      both into "RTO", the mapping in that file needs to send them all to
+      `returned` and a human decides, because burning coins on our own mistake
+      is the fastest way to a one-star review.
 
 - [ ] **P2** — A courier account: TCS, Leopards or M&P
       Why: nothing ships without one. §2 says whichever gives us an account
