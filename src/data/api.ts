@@ -183,3 +183,57 @@ export async function submitSteps(
   if (error) throw new Error(`ingest-steps: ${error.message}`);
   return data?.coins ?? 0;
 }
+
+/**
+ * §7.5 — placing an order.
+ *
+ * Sends what to buy and how many COINS to spend. It does not send a price, a
+ * cost, a discount or a total: the server prices the basket from the catalogue,
+ * caps the discount per line by §0, debits the coins, and writes the header
+ * (§13.2).
+ */
+export async function placeOrder(input: {
+  items: Array<{ product_id: string; qty: number }>;
+  address: Record<string, string>;
+  phone: string;
+  paymentMethod: 'cod' | 'card' | 'wallet';
+  coins: number;
+}): Promise<string> {
+  if (usingDemoData) throw new Error('No Supabase project is configured yet.');
+  return rpc<string>('place_order', {
+    p_items: input.items,
+    p_address: input.address,
+    p_phone: input.phone,
+    p_payment_method: input.paymentMethod,
+    p_coins: Math.max(0, Math.round(input.coins)),
+  });
+}
+
+/**
+ * How many coins this basket can actually absorb, and what that is worth.
+ *
+ * Deliberately a server call rather than arithmetic here: the rate is in
+ * app_config and §4 forbids publishing it, so the client can know the rupees
+ * and the coins without ever knowing the ratio.
+ */
+export async function quoteCoins(
+  userId: string | null,
+  items: Array<{ product_id: string; qty: number }>,
+): Promise<{ coins: number; discountPkr: number }> {
+  if (usingDemoData || !userId) {
+    const discountPkr = 85;
+    return { coins: 2840, discountPkr };
+  }
+  const perItem = await Promise.all(
+    items.map((i) =>
+      rpc<number>('affordable_discount_pkr', {
+        p_user: userId,
+        p_product: i.product_id,
+        p_qty: i.qty,
+      }),
+    ),
+  );
+  const discountPkr = perItem.reduce((sum, d) => sum + (d ?? 0), 0);
+  const balance = await getBalance(userId);
+  return { coins: balance, discountPkr };
+}

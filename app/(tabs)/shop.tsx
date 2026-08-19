@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { router } from 'expo-router';
 import { Temperature, useTheme } from '../../src/theme/ThemeContext';
 import { Screen } from '../../src/components/Screen';
 import { CoinHeader } from '../../src/components/CoinHeader';
@@ -8,6 +9,7 @@ import { text } from '../../src/theme/type';
 import { formatPkr } from '../../src/lib/format';
 import { useI18n } from '../../src/i18n';
 import { useAppState } from '../../src/data/AppState';
+import { useCart } from '../../src/data/Cart';
 import * as api from '../../src/data/api';
 import type { Product } from '../../src/data/types';
 
@@ -54,13 +56,46 @@ function ShopBody() {
           ))}
         </View>
       </Screen>
+      <CartBar />
     </>
+  );
+}
+
+/**
+ * Appears only once there is something in the basket. §7.8: no ad ever appears
+ * in this flow — one abandoned PKR 2,500 order wipes out months of ad revenue
+ * from that user.
+ */
+function CartBar() {
+  const theme = useTheme();
+  const { t } = useI18n();
+  const { count, subtotalPkr } = useCart();
+  if (count === 0) return null;
+
+  return (
+    <Pressable
+      onPress={() => router.push('/checkout')}
+      accessibilityRole="button"
+      accessibilityLabel={`${t.checkout.title}, ${count} items, ${formatPkr(subtotalPkr)} rupees`}
+      style={({ pressed }) => [
+        styles.cartBar,
+        { backgroundColor: theme.text, opacity: pressed ? 0.85 : 1 },
+      ]}
+    >
+      <Text style={[text.body, { color: theme.bg, flex: 1 }]}>
+        {t.checkout.title} · {count}
+      </Text>
+      <Text style={[text.data, { color: theme.bg }]}>
+        {t.common.pkr} {formatPkr(subtotalPkr)}
+      </Text>
+    </Pressable>
   );
 }
 
 function ProductCard({ product }: { product: Product }) {
   const theme = useTheme();
   const { t, fill } = useI18n();
+  const { add } = useCart();
 
   // §7.4: show what THIS user saves right now, given their balance — not a
   // hypothetical maximum. "Save PKR 180 with your coins" beats "up to 10% off".
@@ -72,6 +107,8 @@ function ProductCard({ product }: { product: Product }) {
 
   return (
     <Pressable
+      onPress={() => product.stock > 0 && add(product)}
+      disabled={product.stock === 0}
       accessibilityRole="button"
       accessibilityLabel={`${product.title}, ${formatPkr(product.pricePkr)} rupees${
         saving > 0 ? `, save ${formatPkr(saving)} rupees with your coins` : ''
@@ -134,5 +171,16 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     borderRadius: radius.sm,
     borderWidth: StyleSheet.hairlineWidth,
+  },
+  cartBar: {
+    position: 'absolute',
+    left: space.lg,
+    right: space.lg,
+    bottom: space.lg,
+    minHeight: MIN_TAP,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: space.lg,
+    borderRadius: radius.md,
   },
 });
