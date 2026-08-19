@@ -237,3 +237,40 @@ export async function quoteCoins(
   const balance = await getBalance(userId);
   return { coins: balance, discountPkr };
 }
+
+/** §7.8 — the reward is minted server-side; this never sends an amount. */
+export async function claimRewardedAd(): Promise<number> {
+  if (usingDemoData) throw new Error('No Supabase project is configured yet.');
+  return rpc<number>('claim_rewarded_ad', {});
+}
+
+export async function createTeam(name: string, city?: string): Promise<{ teamId: string; inviteCode: string }> {
+  if (usingDemoData) throw new Error('No Supabase project is configured yet.');
+  const rows = await rpc<Array<{ team_id: string; invite_code: string }>>('create_team', {
+    p_name: name,
+    p_city: city ?? null,
+  });
+  const row = rows[0];
+  if (!row) throw new Error('create_team returned nothing');
+  return { teamId: row.team_id, inviteCode: row.invite_code };
+}
+
+export async function joinTeam(code: string): Promise<string> {
+  if (usingDemoData) throw new Error('No Supabase project is configured yet.');
+  return rpc<string>('join_team', { p_code: code.trim().toUpperCase() });
+}
+
+export async function myReferrals(): Promise<
+  Array<{ name: string | null; joinedAt: string; hasOrdered: boolean; coins: number }>
+> {
+  if (usingDemoData) {
+    return [{ name: 'Ali', joinedAt: new Date().toISOString(), hasOrdered: false, coins: 500 }];
+  }
+  const rows = await rpc<Array<Record<string, unknown>>>('my_referrals', {});
+  return rows.map((r) => ({
+    name: (r.referee_name as string) ?? null,
+    joinedAt: String(r.joined_at),
+    hasOrdered: Boolean(r.has_ordered),
+    coins: Number(r.coins ?? 0),
+  }));
+}

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Temperature, useTheme } from '../../src/theme/ThemeContext';
 import { Screen } from '../../src/components/Screen';
@@ -7,7 +7,9 @@ import { space, radius, MIN_TAP } from '../../src/theme/tokens';
 import { text } from '../../src/theme/type';
 import { useI18n } from '../../src/i18n';
 import { useAppState } from '../../src/data/AppState';
+import * as api from '../../src/data/api';
 import { usingDemoData } from '../../src/data/api';
+import { formatCoins } from '../../src/lib/format';
 
 export default function YouScreen() {
   return (
@@ -40,6 +42,9 @@ function YouBody() {
             {t.you.theRule}
           </Text>
         </View>
+
+        <RewardedVideo />
+        <Referrals />
 
         <Text style={[text.label, { color: theme.textMuted, marginTop: space.xxl }]}>
           {t.you.language}
@@ -74,6 +79,108 @@ function YouBody() {
           </Text>
         ) : null}
       </Screen>
+    </>
+  );
+}
+
+/**
+ * §7.8 — the ONLY ad surface in the app.
+ *
+ * It lives here, in the earning half, and nowhere near browse, cart or
+ * checkout: one abandoned PKR 2,500 order wipes out months of ad revenue from
+ * that user, so an interstitial in a shopping flow is a net loss dressed up as
+ * revenue (§13.5).
+ *
+ * The coin figure comes back from the server. The app never names its own
+ * reward (§13.2) — claim_rewarded_ad takes no arguments at all.
+ */
+function RewardedVideo() {
+  const theme = useTheme();
+  const { t, fill } = useI18n();
+  const { refresh } = useAppState();
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  async function watch() {
+    setBusy(true);
+    setMessage(null);
+    try {
+      // The AdMob rewarded unit goes here; the reward is only claimed once the
+      // SDK reports the video actually completed.
+      const coins = await api.claimRewardedAd();
+      setMessage(fill(t.you.watchVideo, { coins: formatCoins(coins) }));
+      await refresh();
+    } catch (e) {
+      setMessage(e instanceof Error ? e.message : t.common.retry);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <>
+      <Pressable
+        onPress={watch}
+        disabled={busy}
+        accessibilityRole="button"
+        accessibilityLabel={fill(t.you.watchVideo, { coins: 30 })}
+        style={({ pressed }) => [
+          styles.card,
+          {
+            backgroundColor: theme.raised,
+            borderColor: theme.line,
+            marginTop: space.xxl,
+            opacity: pressed || busy ? 0.7 : 1,
+            minHeight: MIN_TAP,
+          },
+        ]}
+      >
+        <Text style={[text.body, { color: theme.text }]}>
+          {fill(t.you.watchVideo, { coins: 30 })}
+        </Text>
+      </Pressable>
+      {message ? (
+        <Text style={[text.bodySmall, { color: theme.textMuted, marginTop: space.sm }]}>
+          {message}
+        </Text>
+      ) : null}
+    </>
+  );
+}
+
+/** §7.7 — pending referrals, so the referrer keeps nudging. */
+function Referrals() {
+  const theme = useTheme();
+  const { t, fill } = useI18n();
+  const [rows, setRows] = useState<Awaited<ReturnType<typeof api.myReferrals>>>([]);
+
+  useEffect(() => {
+    let alive = true;
+    api.myReferrals().then((r) => { if (alive) setRows(r); }).catch(() => {});
+    return () => { alive = false; };
+  }, []);
+
+  if (rows.length === 0) return null;
+
+  return (
+    <>
+      <Text style={[text.label, { color: theme.textMuted, marginTop: space.xxl }]}>
+        {t.you.referral}
+      </Text>
+      {rows.map((r) => (
+        <Text
+          key={`${r.name}-${r.joinedAt}`}
+          style={[
+            text.body,
+            { color: r.hasOrdered ? theme.textMuted : theme.text, marginTop: space.sm },
+          ]}
+        >
+          {fill(t.you.referralPending, {
+            name: r.name ?? '—',
+            coins: formatCoins(r.coins),
+          })}
+        </Text>
+      ))}
     </>
   );
 }

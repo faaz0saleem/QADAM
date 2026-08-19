@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { router } from 'expo-router';
 import { Temperature, useTheme } from '../../src/theme/ThemeContext';
 import { Screen } from '../../src/components/Screen';
 import { CoinHeader } from '../../src/components/CoinHeader';
@@ -92,13 +93,29 @@ function BoardBody() {
 
         <View style={{ marginTop: space.xl }}>
           {rows.length === 0 ? (
-            <Text style={[text.body, { color: theme.textMuted }]}>
-              {scope === 'team'
-                ? t.board.emptyTeam
-                : scope === 'friends'
-                  ? t.board.emptyFriends
-                  : fill(t.board.emptyCity, { city: 'your city' })}
-            </Text>
+            <>
+              {/* §9.6: an empty state is an invitation, not an apology. */}
+              <Text style={[text.body, { color: theme.textMuted }]}>
+                {scope === 'team'
+                  ? t.board.emptyTeam
+                  : scope === 'friends'
+                    ? t.board.emptyFriends
+                    : fill(t.board.emptyCity, { city: 'your city' })}
+              </Text>
+              {scope === 'team' ? (
+                <Pressable
+                  onPress={() => router.push('/team')}
+                  accessibilityRole="button"
+                  accessibilityLabel={t.board.joinTeam}
+                  style={({ pressed }) => [
+                    styles.teamCta,
+                    { backgroundColor: theme.text, opacity: pressed ? 0.7 : 1 },
+                  ]}
+                >
+                  <Text style={[text.body, { color: theme.bg }]}>{t.board.joinTeam}</Text>
+                </Pressable>
+              ) : null}
+            </>
           ) : (
             rows
               .filter((r) => !r.pinned)
@@ -151,4 +168,11 @@ const styles = StyleSheet.create({
   },
   // Tabular figures make a fixed-width rank column line up without a monospace hack.
   rank: { width: 56 },
+  teamCta: {
+    marginTop: space.lg,
+    minHeight: MIN_TAP,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.md,
+  },
 });
