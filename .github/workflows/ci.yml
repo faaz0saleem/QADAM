@@ -37,9 +37,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: denoland/setup-deno@v2
-        with:
-          deno-version: v2.x
+      # Installed from npm rather than via a marketplace action, so this workflow
+      # depends on nothing outside actions/checkout.
+      - name: Install Deno
+        run: |
+          npm install -g deno
+          deno --version
 
       - name: Typecheck
         run: |
