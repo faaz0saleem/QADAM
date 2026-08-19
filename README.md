@@ -100,11 +100,32 @@ app/theme/              §9 design tokens, the single source for colour and type
 - **The client reports raw step counts and nothing else.** It never computes
   coins, never sends a coin value, never sends a balance.
 
+## Tools
+
+```bash
+# what a brand's spreadsheet would import, and what §0 allows on each row
+node scripts/import-catalogue.mjs --brand "Sample Threads" catalogue.csv
+
+# the admin report: §0 breaches, trade, RTO, coin float, catalogue margins
+# exits 2 on a margin breach, so it works as a cron check as well as a report
+DATABASE_URL=... node scripts/economics.mjs
+```
+
 ## Status
 
-Phase 0 and the Phase 1 server are in: schema, the §0 constraint, the coin ledger,
-step ingestion with the §6.1 anti-fraud rules, all four leaderboard scopes, teams,
-expiry notifications, and the Phase 2 commerce path with the COD lifecycle.
+**In:** the schema and the §0 constraints; the coin ledger with FIFO expiry
+batches; step ingestion with the §6.1 anti-fraud rules; attestation via an Edge
+Function that fails closed; all four leaderboard scopes; teams; referrals;
+rewarded video; expiry and streak notifications; the commerce path with the COD
+lifecycle and coin burn on refusal; the CSV importer; the admin report; and the
+app with the §9 design system across five tabs, bilingual EN/UR.
 
-109 tests pass. The app itself is next — see `HUMAN_TASKS.md` for what it needs
-before it can run on a phone.
+**Not in:** the checkout and product-detail screens, the courier integration,
+the WhatsApp confirmation sender, and the client-side integrity provider. The
+last one means nothing mints on a hosted project yet — see `HUMAN_TASKS.md`.
+
+157 tests pass and the typecheck is clean:
+
+```bash
+npm run check
+```

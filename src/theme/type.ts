@@ -1,4 +1,4 @@
-import { Platform, TextStyle } from 'react-native';
+import type { TextStyle } from 'react-native';
 
 /**
  * §9.3 — three families, each with one job.
@@ -25,14 +25,14 @@ export const fonts = {
   urdu: 'NotoNastaliqUrdu_400Regular',
 } as const;
 
-/** Tabular figures, everywhere a number can change. */
-const tabular: TextStyle = {
-  fontVariant: ['tabular-nums'],
-  ...Platform.select({
-    ios: { fontFeatureSettings: undefined },
-    default: {},
-  }),
-};
+/**
+ * Tabular figures, everywhere a number can change (§9.3).
+ *
+ * `fontVariant: ['tabular-nums']` is honoured on both platforms and applies to
+ * the fallback face too, which matters: the numbers must not jitter before the
+ * bundled fonts have loaded either.
+ */
+const tabular: TextStyle = { fontVariant: ['tabular-nums'] };
 
 export const text = {
   /** §9.4: today's step count. Very large, monospace, ticking. */

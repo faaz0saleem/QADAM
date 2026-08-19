@@ -448,3 +448,40 @@ section are notes, never amendments — §0–§13 above are the brief and are n
   roles, `auth.users` and `auth.uid()` only if they are absent, so the same migration set
   applies to a bare Postgres (for tests) and to a hosted Supabase project (where every
   statement in it is a no-op).
+
+- **The rate ceiling is measured inside the reported day, not between syncs.** §6.1
+  says reject anything implying >200 steps/minute. Measured against the gap between two
+  syncs, that rejects honest devices: Health Connect and HealthKit hand over step data in
+  batches, so a real phone routinely reports thousands of new steps a minute after its
+  last sync, and any resync of a past day looks like a burst. What is actually impossible
+  is a DAY total larger than the day has had minutes, so that is what is checked. The
+  daily cap still binds underneath it.
+- **The streak multiplier is exactly 1.0 on day one.** Linear from there to
+  `STREAK_MULTIPLIER_MAX` on day `STREAK_DAYS_FOR_MAX`. A day-one multiplier would make
+  the first coins a user ever sees disagree with §4's "1,000 steps = 10 coins", which is
+  the one promise we keep forever.
+- **`STREAK_QUALIFYING_STEPS` is an addition, not a reading of the brief.** §4 sets the
+  multiplier but never says what earns a streak day. Defaulted to 5,000 credited steps
+  and put in `app_config` like everything else. Confirming it is a HUMAN_TASKS item.
+- **Coin-to-rupee conversion takes the ceiling on coins, then clamps the rupees.**
+  Flooring in both directions loses a rupee off the §0 ceiling, so a user could never
+  quite reach the discount the rule allows. `ceil(cap / rate)` overshoots by less than
+  one coin's worth and the clamp keeps the result inside the ceiling at any rate.
+- **§6.1's redemption lock is enforced in two places on purpose.** `spend_coins` refuses,
+  and `affordable_discount_pkr` returns 0. Only the second is about the user: a shop that
+  advertises a discount to an account that cannot yet redeem sends them to a checkout
+  that refuses them, which reads as a bug and costs the order.
+- **Attestation fails closed, which means a fresh project mints nothing.** The
+  `ingest-steps` Edge Function refuses any submission it cannot verify — a missing
+  credential and a forged token are the same answer. Failing open would mean a farm only
+  had to make verification fail to mint freely. The consequence is that a new Supabase
+  project looks broken until the Play Integrity and DeviceCheck keys exist;
+  `ALLOW_UNATTESTED` is the development escape hatch, is a server secret no client can
+  set, and writes an auditable `fraud_events` row on every use.
+- **Teams are joined through an RPC, not a table write.** A client that could query
+  `teams` by invite code could enumerate every team in the country, so the code is
+  resolved server-side and `insert` on `teams` and `team_members` is revoked.
+- **The design rules that erode quietly are tests.** The banned copy vocabulary (§9.6),
+  key parity between English and Urdu, brass never filling a non-coin surface (§9.2), no
+  hardcoded hex outside the palette, and tabular figures on every numeric style (§9.3).
+  None of these is the sort of rule anyone breaks deliberately.

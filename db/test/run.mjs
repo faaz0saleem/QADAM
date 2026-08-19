@@ -71,6 +71,7 @@ const UNIT_DIRS = [
   join(repoRoot, 'src', 'lib'),
   join(repoRoot, 'src', 'i18n'),
   join(repoRoot, 'scripts', 'lib'),
+  join(repoRoot, 'src', 'theme'),
 ];
 
 async function testFiles() {
