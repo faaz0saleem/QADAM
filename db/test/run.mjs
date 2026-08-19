@@ -67,7 +67,11 @@ async function applyMigrations() {
 
 // Database tests live next to this runner; pure unit tests live beside the code
 // they cover. Both run in one pass so `npm test` is the whole story.
-const UNIT_DIRS = [join(repoRoot, 'src', 'lib'), join(repoRoot, 'src', 'i18n')];
+const UNIT_DIRS = [
+  join(repoRoot, 'src', 'lib'),
+  join(repoRoot, 'src', 'i18n'),
+  join(repoRoot, 'scripts', 'lib'),
+];
 
 async function testFiles() {
   const found = [];
