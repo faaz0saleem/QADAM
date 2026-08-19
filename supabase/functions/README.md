@@ -10,6 +10,8 @@ verified third-party signature.
 | `ingest-steps` | client, authenticated | The **only** way step data enters the system. Verifies Play Integrity / App Attest, then calls `submit_steps` as `service_role`. The device cannot reach that RPC — it is revoked from `authenticated`. |
 | `admob-ssv` | Google, public | Verifies AdMob's ECDSA signature against Google's published verifier keys before crediting. The reward amount in Google's callback is ignored; coins come from `app_config`. |
 | `delete-account` | client, authenticated | In-app account deletion, which both stores require. Removes the rows first and the auth user second — the reverse cascades into an append-only ledger and fails halfway. |
+| `order-confirm` | pg_cron, every 15 min | §7.5 — asks for WhatsApp confirmation on COD orders over PKR 3,000. At most three times, never twice in an hour. |
+| `order-webhook` | WhatsApp + courier | The replies. Decides whether coins are spent or **burned**, so it verifies a shared secret in constant time before believing anything. |
 | `expire-coins-notify` | pg_cron, 10:00 PKT | §4's reactivation lever: coins lapsing inside seven days. |
 | `streak-notify` | pg_cron, 20:00 PKT | Streak at risk, while there is still an evening to walk in. |
 
@@ -38,7 +40,20 @@ GOOGLE_SERVICE_ACCOUNT_JSON       service account with the playintegrity scope
 APPLE_APP_ATTEST_TEAM_ID
 APPLE_APP_ATTEST_BUNDLE_ID
 EXPO_ACCESS_TOKEN                 optional; raises Expo's push rate limits
+WHATSAPP_BUSINESS_PHONE_ID        Meta phone number id
+WHATSAPP_BUSINESS_TOKEN
+WHATSAPP_CONFIRM_TEMPLATE         defaults to order_confirmation
+COURIER_PROVIDER                  tcs | leopards | mp
+COURIER_API_BASE, COURIER_API_KEY
+ORDER_WEBHOOK_SECRET              required; without it every callback is refused
 ```
+
+## Fulfilment fails closed too
+
+`whatsapp.ts` and `courier.ts` follow the same rule as attestation: unconfigured
+means *not sent* and *not booked*, never "assume it worked". And an unrecognised
+courier status maps to `unknown` rather than a guess — guessing there spends
+coins that should have been burned, or burns coins that should have been spent.
 
 `private.notify()` needs two database settings so cron can reach these:
 
