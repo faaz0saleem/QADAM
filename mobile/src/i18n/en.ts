@@ -44,6 +44,7 @@ export const en = {
     title: 'Today',
     stepsLabel: 'steps today',
     towardCap: '{{current}} of {{cap}} counted today',
+    notCountedYet: '{{steps}} still to be counted — they go up on the next sync',
     capReached: "Today's steps are all counted",
     coinsToday: 'minted today',
     streak: '{{days}}-day streak',

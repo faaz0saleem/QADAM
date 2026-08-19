@@ -46,6 +46,7 @@ export const ur: Copy = {
     title: 'آج',
     stepsLabel: 'قدم آج',
     towardCap: 'آج {{cap}} میں سے {{current}} شمار ہوئے',
+    notCountedYet: '{{steps}} ابھی شمار ہونے باقی ہیں — اگلی مطابقت پر شامل ہو جائیں گے',
     capReached: 'آج کے تمام قدم شمار ہو چکے ہیں',
     coinsToday: 'آج بنے',
     streak: '{{days}} دن کا سلسلہ',

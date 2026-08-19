@@ -56,3 +56,17 @@ export function pktDaysAgo(days: number): string {
     day: '2-digit',
   }).format(d);
 }
+
+/**
+ * The instant the current PKT day began, as an ISO string.
+ *
+ * Pakistan is UTC+5 with no daylight saving, so this is fixed-offset arithmetic
+ * rather than a timezone lookup — and getting it wrong is how the live counter
+ * would show yesterday's steps for the first five hours of every day.
+ */
+export function pktDayStartIso(at: Date = new Date()): string {
+  const PKT_OFFSET_MS = 5 * 3_600_000;
+  const pktMs = at.getTime() + PKT_OFFSET_MS;
+  const midnightPktMs = Math.floor(pktMs / 86_400_000) * 86_400_000;
+  return new Date(midnightPktMs - PKT_OFFSET_MS).toISOString();
+}

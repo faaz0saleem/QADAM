@@ -5,9 +5,11 @@ import { Screen } from '@/components/Screen';
 import { Card, Row, Text } from '@/components/ui';
 import { MintingCoinValue, CoinValue } from '@/components/Coin';
 import { LedgerRule } from '@/components/LedgerRule';
+import { TickingNumber } from '@/components/TickingNumber';
 import { earning, space, MIN_TAP_TARGET, radius } from '@/theme';
 import { useI18n, fill } from '@/i18n';
 import { useSteps } from '@/hooks/useSteps';
+import { useLiveSteps, useLiveStepTicker } from '@/hooks/useLiveSteps';
 import { openStepPermissionSettings } from '@/lib/health';
 import { useWallet } from '@/hooks/useWallet';
 import { formatNumber, relativeTime } from '@/lib/format';
@@ -28,9 +30,18 @@ const STREAK_MIN = 5000;
 export default function StepsScreen() {
   const { t, locale } = useI18n();
   const steps = useSteps();
-  const wallet = useWallet();
+  const live = useLiveSteps();
+
+  // The phone's own count, read every few seconds. Display only — see
+  // useLiveSteps for why this can never be allowed to become coins.
+  useLiveStepTicker();
 
   const contextual = usePickOneCard();
+
+  // Before the first live read lands, the server's figure is the best thing we
+  // have. After it, the phone is ahead and that is the number to show.
+  const shownSteps = live.steps ?? steps.today;
+  const uncounted = Math.max(0, shownSteps - steps.today);
 
   if (steps.permission === 'denied' || steps.permission === 'unavailable') {
     return <PermissionScreen />;
@@ -38,24 +49,23 @@ export default function StepsScreen() {
 
   return (
     <Screen title={t.steps.title} onRefresh={steps.sync} refreshing={steps.syncing}>
-      {/* 1 — the count */}
+      {/* 1 — the count, ticking. §9.4 wants it very large, monospace, ticking,
+             and this is the ticking part: it moves while you watch it rather
+             than jumping when a sync happens. */}
       <View style={styles.counterBlock}>
-        <Text
-          variant="counter"
+        <TickingNumber
+          value={shownSteps}
           style={styles.counter}
-          numberOfLines={1}
-          adjustsFontSizeToFit
-        >
-          {formatNumber(steps.today)}
-        </Text>
+          accessibilityLabel={`${formatNumber(shownSteps)} ${t.steps.stepsLabel}`}
+        />
         <Text variant="label" dim>
           {t.steps.stepsLabel}
         </Text>
       </View>
 
-      {/* 2 — the ruled line, filling */}
+      {/* 2 — the ruled line, filling toward the daily cap */}
       <View style={styles.ruleBlock}>
-        <LedgerRule progress={steps.today / DAILY_CAP} />
+        <LedgerRule progress={shownSteps / DAILY_CAP} />
         <Text variant="dataSmall" faint>
           {steps.capped
             ? t.steps.capReached
@@ -64,6 +74,17 @@ export default function StepsScreen() {
                 cap: formatNumber(DAILY_CAP),
               })}
         </Text>
+        {/*
+          The gap between what the phone has seen and what the server has
+          counted is real, and it closes on the next sync. Saying so is better
+          than letting someone wonder why the big number and the counted number
+          disagree — §9.6, say what happened.
+        */}
+        {uncounted > 0 && !steps.capped ? (
+          <Text variant="dataSmall" faint>
+            {fill(t.steps.notCountedYet, { steps: formatNumber(uncounted) })}
+          </Text>
+        ) : null}
       </View>
 
       {/* 3 — today's coins, in brass, counting up */}

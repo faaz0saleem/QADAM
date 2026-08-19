@@ -1,4 +1,4 @@
-import { formatNumber, formatPkr, pktToday, pktDaysAgo } from '../format';
+import { formatNumber, formatPkr, pktToday, pktDaysAgo, pktDayStartIso } from '../format';
 
 describe('formatNumber', () => {
   it('groups thousands', () => {
@@ -47,5 +47,32 @@ describe('the PKT business day', () => {
       day: '2-digit',
     }).format(utcEvening);
     expect(karachiDay).toBe('2026-08-20');
+  });
+});
+
+/**
+ * The live counter asks the health store for "today", and today has to mean the
+ * Karachi day. Get this wrong and the number shows yesterday's steps for the
+ * first five hours of every morning — the exact window when someone checks it
+ * on waking.
+ */
+describe('pktDayStartIso', () => {
+  it('is 19:00 UTC the previous day', () => {
+    // 10:00 UTC on the 19th is 15:00 PKT the same day.
+    expect(pktDayStartIso(new Date('2026-08-19T10:00:00Z'))).toBe('2026-08-18T19:00:00.000Z');
+  });
+
+  it('rolls over at midnight Karachi, not midnight UTC', () => {
+    // 18:59 UTC is 23:59 PKT — still the 19th in Karachi.
+    expect(pktDayStartIso(new Date('2026-08-19T18:59:00Z'))).toBe('2026-08-18T19:00:00.000Z');
+    // 19:00 UTC is 00:00 PKT on the 20th — a new day has begun.
+    expect(pktDayStartIso(new Date('2026-08-19T19:00:00Z'))).toBe('2026-08-19T19:00:00.000Z');
+  });
+
+  it('agrees with pktToday across the boundary', () => {
+    const justAfterMidnightPkt = new Date('2026-08-19T19:30:00Z');
+    const start = pktDayStartIso(justAfterMidnightPkt);
+    // Half an hour into the Karachi day, the day began half an hour ago.
+    expect(justAfterMidnightPkt.getTime() - new Date(start).getTime()).toBe(30 * 60 * 1000);
   });
 });
