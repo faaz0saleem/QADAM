@@ -11,6 +11,7 @@ import { earning, space } from '@/theme';
 import { useI18n, fill } from '@/i18n';
 import { displayPhone } from '@/lib/phone';
 import { sendOtp, verifyOtp } from '@/hooks/useSession';
+import { takePendingInvite } from '@/lib/pendingInvite';
 
 const CODE_LENGTH = 6;
 const RESEND_SECONDS = 45;
@@ -51,7 +52,15 @@ export default function VerifyScreen() {
     // First sign-in only: ask about a referral code once, then never again.
     // §7.7 wants the code applied before the first order, not nagged for.
     const prompted = await AsyncStorage.getItem(REFERRAL_PROMPTED_KEY);
-    router.replace(prompted ? '/' : '/referral');
+    if (!prompted) {
+      router.replace('/referral');
+      return;
+    }
+
+    // Someone who arrived from a team invite gets taken to it, not dropped on
+    // the home screen wondering what happened to the link they followed.
+    const invite = await takePendingInvite();
+    router.replace(invite ? { pathname: '/team', params: { code: invite } } : '/');
   };
 
   // Auto-submit on the sixth digit. Making someone press a button after typing

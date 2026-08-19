@@ -11,6 +11,7 @@ import { earning, space } from '@/theme';
 import { useI18n } from '@/i18n';
 import { supabase } from '@/lib/supabase';
 import { REFERRAL_PROMPTED_KEY } from './verify';
+import { takePendingInvite } from '@/lib/pendingInvite';
 
 /**
  * §7.7 — the referral code goes in once, right after sign-up, and pays nothing
@@ -31,7 +32,8 @@ export default function ReferralScreen() {
 
   const finish = async () => {
     await AsyncStorage.setItem(REFERRAL_PROMPTED_KEY, '1');
-    router.replace('/');
+    const invite = await takePendingInvite();
+    router.replace(invite ? { pathname: '/team', params: { code: invite } } : '/');
   };
 
   const apply = async () => {
