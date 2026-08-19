@@ -12,7 +12,9 @@
     "test:db": "./scripts/test.sh",
     "check:design": "python3 scripts/check-design.py",
     "app:typecheck": "npm --prefix mobile run typecheck",
-    "app:start": "npm --prefix mobile run start"
+    "app:start": "npm --prefix mobile run start",
+    "app:test": "npm --prefix mobile test",
+    "check": "./scripts/test.sh && npm --prefix mobile run typecheck && npm --prefix mobile test && python3 scripts/check-design.py"
   },
   "engines": {
     "node": ">=20"

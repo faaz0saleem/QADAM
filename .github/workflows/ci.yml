@@ -69,6 +69,10 @@ jobs:
         working-directory: mobile
         run: npx tsc --noEmit
 
+      - name: Unit tests
+        working-directory: mobile
+        run: npx jest --ci
+
       # §9.2 brass is coin-only, §9.6 forbidden words, §2 no location APIs.
       # Enforced the same way §0 is: mechanically, not by remembering.
       - name: Design rules
