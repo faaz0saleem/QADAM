@@ -6,6 +6,7 @@ import { Screen } from '@/components/Screen';
 import { Card, EmptyState, Row, Text } from '@/components/ui';
 import { Button } from '@/components/Button';
 import { ChallengeCard } from '@/components/ChallengeCard';
+import { Loading, Notice } from '@/components/Notice';
 import { earning, radius, space, MIN_TAP_TARGET } from '@/theme';
 import { useI18n, fill } from '@/i18n';
 import { useLeaderboard, type Period, type Scope } from '@/hooks/useLeaderboard';
@@ -25,7 +26,7 @@ export default function BoardScreen() {
   const router = useRouter();
   const [scope, setScope] = useState<Scope>('city');
   const [period, setPeriod] = useState<Period>('week');
-  const { rows, mine, loading, reload } = useLeaderboard(scope, period);
+  const { rows, mine, loading, failed, reload } = useLeaderboard(scope, period);
 
   const scopeLabel: Record<Scope, string> = {
     city: t.board.scopeCity,
@@ -84,7 +85,11 @@ export default function BoardScreen() {
         )}
       </Card>
 
-      {rows.length === 0 && !loading ? (
+      {failed ? (
+        <Notice message={t.errors.generic} actionLabel={t.errors.retry} onAction={reload} />
+      ) : loading && rows.length === 0 ? (
+        <Loading />
+      ) : rows.length === 0 ? (
         // §9.6 — empty states are invitations. An empty team board with no way
         // to start a team is an apology with extra steps.
         <View style={styles.emptyBlock}>

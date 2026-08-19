@@ -6,6 +6,7 @@ import { Screen } from '@/components/Screen';
 import { Button } from '@/components/Button';
 import { Field } from '@/components/Field';
 import { Card, Divider, Row, Text } from '@/components/ui';
+import { Loading, Notice } from '@/components/Notice';
 import { earning, space } from '@/theme';
 import { useI18n, fill } from '@/i18n';
 import { supabase } from '@/lib/supabase';
@@ -45,28 +46,47 @@ export default function TeamScreen() {
   const [team, setTeam] = useState<Team | null>(null);
   const [roster, setRoster] = useState<RosterRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [teamRes, rosterRes] = await Promise.all([
-      supabase.rpc('my_team'),
-      supabase.rpc('team_roster'),
-    ]);
-    setTeam(((teamRes.data ?? []) as Team[])[0] ?? null);
-    setRoster((rosterRes.data ?? []) as RosterRow[]);
-    setLoading(false);
+    setFailed(false);
+    try {
+      const [teamRes, rosterRes] = await Promise.all([
+        supabase.rpc('my_team'),
+        supabase.rpc('team_roster'),
+      ]);
+      if (teamRes.error || rosterRes.error) {
+        setFailed(true);
+        return;
+      }
+      setTeam(((teamRes.data ?? []) as Team[])[0] ?? null);
+      setRoster((rosterRes.data ?? []) as RosterRow[]);
+    } catch {
+      setFailed(true);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
     void load();
   }, [load]);
 
-  if (loading) {
-    return <Screen title={t.team.title}>{null}</Screen>;
+  if (loading && !team) {
+    return (
+      <Screen title={t.team.title}>
+        <Loading />
+      </Screen>
+    );
   }
 
   return (
     <Screen title={t.team.title} onRefresh={load} refreshing={loading}>
+      {failed ? (
+        <Notice message={t.errors.generic} actionLabel={t.errors.retry} onAction={load} />
+      ) : null}
+
       {team ? (
         <TeamRoster team={team} roster={roster} onChange={load} onLeft={() => router.back()} />
       ) : (

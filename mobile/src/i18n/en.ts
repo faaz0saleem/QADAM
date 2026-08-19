@@ -174,6 +174,8 @@ export const en = {
     healthOff: "Health permission is off, so today's steps aren't counting.",
     healthOffCta: 'Turn it on',
     offline: 'You are offline. Steps are saved and will sync.',
+    retry: 'Try again',
+    serverUnreachable: 'We could not reach Qadam just now. Your steps are saved and will count.',
     generic: 'Something went wrong. Pull down to try again.',
   },
 } as const;

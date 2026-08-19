@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { Screen } from '@/components/Screen';
 import { Card, Divider, EmptyState, Row, Text } from '@/components/ui';
 import { CoinValue } from '@/components/Coin';
+import { Loading, Notice } from '@/components/Notice';
 import { earning, space } from '@/theme';
 import { useI18n, fill } from '@/i18n';
 import { useWalletOnMount, type CoinBatch, type LedgerRow } from '@/hooks/useWallet';
@@ -16,7 +17,7 @@ import { formatDate, formatNumber, relativeTime } from '@/lib/format';
  */
 export default function WalletScreen() {
   const { t, locale } = useI18n();
-  const { balance, batches, ledger, loading, refresh } = useWalletOnMount();
+  const { balance, batches, ledger, loading, failed, refresh } = useWalletOnMount();
   const lock = useRedemptionLock();
 
   return (
@@ -37,7 +38,13 @@ export default function WalletScreen() {
         </Card>
       ) : null}
 
-      {batches.length === 0 && ledger.length === 0 ? (
+      {failed ? (
+        <Notice message={t.errors.generic} actionLabel={t.errors.retry} onAction={refresh} />
+      ) : null}
+
+      {loading && batches.length === 0 && ledger.length === 0 ? (
+        <Loading />
+      ) : batches.length === 0 && ledger.length === 0 ? (
         // §9.6 — empty states are invitations, not apologies.
         <EmptyState>{t.wallet.empty}</EmptyState>
       ) : null}

@@ -26,6 +26,8 @@ interface WalletState {
   batches: CoinBatch[];
   ledger: LedgerRow[];
   loading: boolean;
+  /** True when the last refresh failed. The screen says so; §9.6. */
+  failed: boolean;
 }
 
 /**
@@ -39,10 +41,11 @@ export const walletStore = createStore<WalletState>({
   batches: [],
   ledger: [],
   loading: false,
+  failed: false,
 });
 
 export async function refreshWallet(): Promise<void> {
-  walletStore.set({ loading: true });
+  walletStore.set({ loading: true, failed: false });
   try {
     const [balance, batches, ledger] = await Promise.all([
       supabase.rpc('my_coin_balance'),
@@ -54,11 +57,21 @@ export async function refreshWallet(): Promise<void> {
         .limit(50),
     ]);
 
+    if (balance.error || batches.error || ledger.error) {
+      // Leave whatever was last known on screen. A balance that blanks to zero
+      // on a failed refresh is worse than a stale one — it looks like the coins
+      // are gone.
+      walletStore.set({ failed: true });
+      return;
+    }
+
     walletStore.set({
       balance: typeof balance.data === 'number' ? balance.data : 0,
       batches: (batches.data ?? []) as CoinBatch[],
       ledger: (ledger.data ?? []) as LedgerRow[],
     });
+  } catch {
+    walletStore.set({ failed: true });
   } finally {
     walletStore.set({ loading: false });
   }

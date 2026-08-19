@@ -95,12 +95,18 @@ export default function StepsScreen() {
       {/* 5 — exactly one contextual card, whichever is most urgent */}
       {contextual}
 
+      {/* §7.1 — "show last-synced time so failures are visible", and §9.6 —
+          say what happened. An unreachable server is not a lost connection, and
+          telling someone on a perfect connection that they have no signal sends
+          them to fix the wrong thing. */}
       <Text variant="dataSmall" faint style={styles.synced}>
         {steps.syncing
           ? t.steps.syncing
-          : steps.queued
-            ? t.errors.offline
-            : fill(t.steps.lastSynced, { when: relativeTime(steps.lastSynced, locale) })}
+          : steps.syncProblem === 'server'
+            ? t.errors.serverUnreachable
+            : steps.syncProblem === 'offline'
+              ? t.errors.offline
+              : fill(t.steps.lastSynced, { when: relativeTime(steps.lastSynced, locale) })}
       </Text>
     </Screen>
   );

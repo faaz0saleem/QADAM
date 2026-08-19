@@ -17,6 +17,7 @@ interface StepState {
   capped: boolean;
   syncing: boolean;
   queued: boolean;
+  syncProblem: 'offline' | 'server' | 'signed_out' | null;
   lastSynced: string | null;
   permission: HealthStatus | 'unknown';
 }
@@ -28,6 +29,7 @@ export const stepStore = createStore<StepState>({
   capped: false,
   syncing: false,
   queued: false,
+  syncProblem: null,
   lastSynced: null,
   permission: 'unknown',
 });
@@ -45,6 +47,7 @@ export async function sync(): Promise<void> {
       capped: today?.capped ?? false,
       streakDays: result.streak_days,
       queued: result.queued,
+      syncProblem: result.reason,
       lastSynced: await lastSyncedAt(),
     });
 

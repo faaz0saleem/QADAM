@@ -19,22 +19,30 @@ export interface SyncResult {
   days: Array<{ date: string; credited_steps: number; coins_awarded: number; capped: boolean }>;
   balance: number;
   streak_days: number;
-  /** True when the work is on disk but did not reach the server. */
+  /** The work is on disk and will go up on the next successful sync. */
   queued: boolean;
+  /**
+   * Why it did not go up. "offline" is normal and says so gently; "server" is
+   * ours and deserves different words. Collapsing the two tells someone on a
+   * perfect connection that they have no signal.
+   */
+  reason: 'offline' | 'server' | 'signed_out' | null;
 }
 
-const EMPTY: SyncResult = { ok: false, days: [], balance: 0, streak_days: 0, queued: true };
+const EMPTY: SyncResult = {
+  ok: false, days: [], balance: 0, streak_days: 0, queued: true, reason: 'offline',
+};
 
 export async function syncSteps(): Promise<SyncResult> {
   // 1. Read the OS health store and put it on disk first. If everything after
   //    this fails, the walk is not lost.
   const fresh = await readDailySteps();
   const queue = await enqueue(fresh);
-  if (queue.length === 0) return { ...EMPTY, ok: true, queued: false };
+  if (queue.length === 0) return { ...EMPTY, ok: true, queued: false, reason: null };
 
   const { data: session } = await supabase.auth.getSession();
   const accessToken = session.session?.access_token;
-  if (!accessToken) return EMPTY;
+  if (!accessToken) return { ...EMPTY, reason: 'signed_out' };
 
   // 2. Attest. A null here still submits — the server records it and credits
   //    nothing, and the response looks identical either way.
@@ -57,17 +65,18 @@ export async function syncSteps(): Promise<SyncResult> {
       }),
     });
 
-    if (!res.ok) return EMPTY;
+    if (!res.ok) return { ...EMPTY, reason: 'server' };
     const body = (await res.json()) as Omit<SyncResult, 'ok' | 'queued'>;
 
     // 3. Only drop days the server actually acknowledged.
     await clearAcknowledged(body.days.map((d) => d.date));
     await markSynced();
 
-    return { ...body, ok: true, queued: false };
+    return { ...body, ok: true, queued: false, reason: null };
   } catch {
-    // Offline. The queue keeps it; the next sync replays it.
-    return { ...EMPTY, days: [], queued: true };
+    // Offline. The queue keeps it; the next sync replays it. This is the
+    // ordinary case in this market, not an error.
+    return { ...EMPTY, reason: 'offline' };
   }
 }
 
