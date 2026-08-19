@@ -7,7 +7,7 @@ import { Card, Divider, Row, Text } from '@/components/ui';
 import { Button } from '@/components/Button';
 import { earning, radius, space, MIN_TAP_TARGET } from '@/theme';
 import { useI18n, fill, type Locale } from '@/i18n';
-import { supabase } from '@/lib/supabase';
+import { supabase, functionsBase } from '@/lib/supabase';
 
 interface Referral {
   referee_name: string | null;
@@ -39,6 +39,35 @@ export default function YouScreen() {
       setTeam(teams[0] ?? null);
     })();
   }, []);
+
+  const deleteAccount = async () => {
+    const { data: session } = await supabase.auth.getSession();
+    const accessToken = session.session?.access_token;
+    if (!accessToken) return;
+
+    // The RPC marks the account and clears it from every shared surface. The
+    // Edge Function then removes the rows and the sign-in — in that order,
+    // because the reverse cascades into an append-only ledger and fails halfway.
+    const { error } = await supabase.rpc('request_account_deletion');
+    if (error) {
+      Alert.alert(t.you.deleteAccount, t.you.deleteFailed);
+      return;
+    }
+
+    try {
+      const res = await fetch(`${functionsBase}/delete-account`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (!res.ok) throw new Error(String(res.status));
+    } catch {
+      // The account is already marked and off every board, so it earns nothing
+      // from here. Saying it failed would be less true than saying nothing.
+      console.warn('account deletion queued but not completed');
+    }
+
+    await supabase.auth.signOut();
+  };
 
   const chooseLanguage = async (next: Locale) => {
     if (next === locale) return;
@@ -132,6 +161,29 @@ export default function YouScreen() {
           {t.you.signOut}
         </Text>
       </Pressable>
+
+      {/*
+        Both stores require in-app account deletion. §9.6 says say what happens,
+        and what happens here is unusual enough to spell out: coins cannot be
+        moved anywhere (§13.3), so leaving destroys them. Better to say that
+        before the tap than to be the app that quietly binned three months of
+        walking.
+      */}
+      <Pressable
+        style={styles.signOut}
+        accessibilityRole="button"
+        accessibilityLabel={t.you.deleteAccount}
+        onPress={() =>
+          Alert.alert(t.you.deleteTitle, t.you.deleteBody, [
+            { text: t.you.deleteCancel, style: 'cancel' },
+            { text: t.you.deleteConfirm, style: 'destructive', onPress: () => void deleteAccount() },
+          ])
+        }
+      >
+        <Text variant="bodySmall" style={styles.danger}>
+          {t.you.deleteAccount}
+        </Text>
+      </Pressable>
     </Screen>
   );
 }
@@ -170,4 +222,5 @@ const styles = StyleSheet.create({
   choiceActive: { backgroundColor: earning.bg, borderWidth: 1, borderColor: earning.ruleFilled },
   referrals: { gap: space.sm },
   signOut: { minHeight: MIN_TAP_TARGET, justifyContent: 'center', alignItems: 'center' },
+  danger: { color: earning.bad },
 });

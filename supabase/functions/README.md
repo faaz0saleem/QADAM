@@ -9,6 +9,7 @@ verified third-party signature.
 | `attest-nonce` | client, authenticated | Issues a single-use 5-minute nonce so an attestation token cannot be captured and replayed. |
 | `ingest-steps` | client, authenticated | The **only** way step data enters the system. Verifies Play Integrity / App Attest, then calls `submit_steps` as `service_role`. The device cannot reach that RPC — it is revoked from `authenticated`. |
 | `admob-ssv` | Google, public | Verifies AdMob's ECDSA signature against Google's published verifier keys before crediting. The reward amount in Google's callback is ignored; coins come from `app_config`. |
+| `delete-account` | client, authenticated | In-app account deletion, which both stores require. Removes the rows first and the auth user second — the reverse cascades into an append-only ledger and fails halfway. |
 | `expire-coins-notify` | pg_cron, 10:00 PKT | §4's reactivation lever: coins lapsing inside seven days. |
 | `streak-notify` | pg_cron, 20:00 PKT | Streak at risk, while there is still an evening to walk in. |
 

@@ -72,6 +72,7 @@ Real numbers from the seeded catalogue — no special-casing anywhere:
 - ✅ Bilingual English/Urdu with RTL, typed so a missing translation will not compile.
 - ✅ Loading, empty and error states on every screen; offline and "server refused" say different things.
 - ✅ Accessibility: labels on every interactive element, grouped rows, works at 320px.
+- ✅ **In-app account deletion**, which both stores require. Everything goes — including coins, which have nowhere else to be.
 
 ## Infrastructure
 
