@@ -164,14 +164,37 @@ Finished items move to [Done](#done) rather than being deleted.
       - `select refresh_leaderboards();` every 15 minutes (§7.3)
       - the expiry-notification sweep daily at 09:00 PKT (§4, §7.2)
 
-- [ ] **P3** — Play Integrity and App Attest keys
-      Why: §6.1 requires attestation on every step submission, and the ingestion
-      function already refuses to credit an unattested one. Until these are wired
-      up, `p_attested` is whatever the Edge Function decides — which means the
-      economy is farmable the moment the store opens.
-      ⚠️ This must be real before Phase 2 ships. §6 is explicit that anti-fraud
-      lands before the store, and the code is built for it but cannot verify a
-      token that no one has issued.
+- [ ] **P1** — Play Integrity and DeviceCheck credentials
+      Why: **nobody earns a single coin on a hosted project until these exist.**
+      The `ingest-steps` Edge Function verifies every submission and fails
+      closed, so an unverifiable token earns zero — which is what §6 asks for,
+      and also means a fresh Supabase project looks broken until this is done.
+      How, Android: Google Cloud → the project linked to Play Console → enable
+      the Play Integrity API → create a service account → download the JSON key.
+      Set `ANDROID_PACKAGE_NAME`, `GOOGLE_SA_CLIENT_EMAIL`, `GOOGLE_SA_PRIVATE_KEY`.
+      How, iOS: Apple Developer → Certificates, Identifiers & Profiles → Keys →
+      new key with DeviceCheck enabled → download the `.p8` (once only).
+      Set `APPLE_TEAM_ID`, `APPLE_DEVICECHECK_KEY_ID`, `APPLE_DEVICECHECK_PRIVATE_KEY`.
+      Then: `supabase functions deploy ingest-steps` and `supabase secrets set ...`
+      — see `supabase/functions/README.md`.
+
+- [ ] **P1** — Choose and wire the client-side integrity library
+      Why: the server side is finished; the app currently sends no token, so it
+      mints nothing. `src/lib/attest/index.ts` is the boundary — implement
+      `IntegrityProvider` against whichever library you pick and call
+      `setIntegrityProvider` at startup.
+      Why I did not pick one: this needs a native module in a dev build, and
+      choosing between the options without being able to run one on a device
+      would be guessing. Worth ten minutes with the dev build in front of you.
+
+- [ ] **P2 · SECURITY** — Confirm `ALLOW_UNATTESTED` is unset on production
+      Why: it is a development escape hatch in `ingest-steps` that treats every
+      submission as attested. Without it nothing can be built against a hosted
+      project before the keys above exist; with it, the economy is farmable.
+      It is a server secret, so no client can turn it on, and every use writes a
+      `fraud_events` row marked `dev_bypass: true` — so you can check with:
+      `select count(*) from fraud_events where detail->>'dev_bypass' = 'true';`
+      ⚠️ Set it on the dev project only. Delete it the day the real keys land.
 
 - [ ] **P3** — A payment gateway, if you ever want prepaid orders
       Why: §7.5's `cod_risk_score` is designed to push repeat refusers to

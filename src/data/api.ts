@@ -1,6 +1,7 @@
 import { supabase, isConfigured } from '../lib/supabase';
 import { pktDateString } from '../lib/dates';
 import * as demo from './demo';
+import { getIntegrityToken, integrityNonce } from '../lib/attest';
 import type { BoardRow, BoardScope, CoinBatch, LedgerEntry, Product, TodaySteps } from './types';
 
 /**
@@ -147,9 +148,16 @@ export async function getProducts(userId: string | null): Promise<Product[]> {
 }
 
 /**
- * §6.1: raw counts only. `attested` is the verdict of the attestation Edge
- * Function, not a claim the client makes about itself — the server treats an
- * unattested submission as worth zero coins regardless of what arrives here.
+ * §6.1 — raw counts only, through the attestation function.
+ *
+ * This deliberately does NOT call `submit_steps` directly. That RPC exists and
+ * is granted to authenticated users, but it can only ever pass `attested =
+ * false`, because a client cannot vouch for itself. The Edge Function verifies
+ * a Play Integrity or DeviceCheck token first and then calls `award_steps` as
+ * service_role.
+ *
+ * Nothing in this request is a coin value, a balance or a discount (§13.2), and
+ * the response carries only how many coins the SERVER decided to mint.
  */
 export async function submitSteps(
   date: string,
@@ -157,10 +165,21 @@ export async function submitSteps(
   source: 'health_connect' | 'healthkit',
 ): Promise<number> {
   if (usingDemoData) return 0;
-  return rpc<number>('submit_steps', {
-    p_date: date,
-    p_raw: Math.max(0, Math.round(rawSteps)),
-    p_source: source,
-    p_attested: false,
+
+  const platform = source === 'health_connect' ? 'android' : 'ios';
+  const nonce = await integrityNonce(date, rawSteps);
+  const integrityToken = await getIntegrityToken(nonce);
+
+  const { data, error } = await supabase!.functions.invoke<{ coins: number }>('ingest-steps', {
+    body: {
+      date,
+      raw_steps: Math.max(0, Math.round(rawSteps)),
+      platform,
+      integrity_token: integrityToken,
+      nonce,
+    },
   });
+
+  if (error) throw new Error(`ingest-steps: ${error.message}`);
+  return data?.coins ?? 0;
 }
