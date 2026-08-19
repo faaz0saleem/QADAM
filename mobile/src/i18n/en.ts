@@ -66,6 +66,18 @@ export const en = {
     noLocation: 'Qadam never asks for your location.',
   },
 
+  earn: {
+    title: 'Watch a video',
+    body: 'Watch a short video and get {{coins}} coins.',
+    left: '{{count}} left today',
+    none: 'That is all for today. More tomorrow.',
+    watch: 'Watch',
+    watching: 'Loading',
+    unavailable: 'No video available right now. Try again shortly.',
+    dismissed: 'You need to watch it through to get the coins.',
+    earned: 'Coins are on their way.',
+  },
+
   wallet: {
     title: 'Wallet',
     balance: 'coins',
@@ -193,6 +205,11 @@ export const en = {
     joinBody: 'Enter the code your captain sent you.',
     codePlaceholder: 'Code',
     joinCta: 'Join team',
+    standing: 'This week',
+    standingRank: '{{rank}} of {{total}} teams',
+    shareCard: 'Share our rank',
+    cardTagline: 'Walking together on Qadam',
+    cardSteps: '{{steps}} steps this week',
     roster: 'Members',
     captain: 'Captain',
     youLabel: 'You',

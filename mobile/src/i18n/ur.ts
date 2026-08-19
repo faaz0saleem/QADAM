@@ -68,6 +68,18 @@ export const ur: Copy = {
     noLocation: 'قدم کبھی آپ کے مقام کی اجازت نہیں مانگتا۔',
   },
 
+  earn: {
+    title: 'ویڈیو دیکھیں',
+    body: 'ایک مختصر ویڈیو دیکھیں اور {{coins}} سکے حاصل کریں۔',
+    left: 'آج {{count}} باقی',
+    none: 'آج کے لیے بس۔ کل مزید۔',
+    watch: 'دیکھیں',
+    watching: 'لوڈ ہو رہا ہے',
+    unavailable: 'ابھی کوئی ویڈیو دستیاب نہیں۔ تھوڑی دیر بعد کوشش کریں۔',
+    dismissed: 'سکے حاصل کرنے کے لیے پوری ویڈیو دیکھنا ضروری ہے۔',
+    earned: 'سکے آ رہے ہیں۔',
+  },
+
   wallet: {
     title: 'بٹوہ',
     balance: 'سکے',
@@ -195,6 +207,11 @@ export const ur: Copy = {
     joinBody: 'وہ کوڈ درج کریں جو آپ کے کپتان نے بھیجا ہے۔',
     codePlaceholder: 'کوڈ',
     joinCta: 'شامل ہوں',
+    standing: 'اس ہفتے',
+    standingRank: '{{total}} ٹیموں میں سے {{rank}}',
+    shareCard: 'ہماری درجہ بندی بھیجیں',
+    cardTagline: 'قدم پر مل کر چل رہے ہیں',
+    cardSteps: 'اس ہفتے {{steps}} قدم',
     roster: 'ارکان',
     captain: 'کپتان',
     youLabel: 'آپ',

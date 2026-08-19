@@ -39,11 +39,12 @@ select is(
   || 'create_team, current_leaderboard_period, hand_over_captaincy, join_team, '
   || 'leaderboard, leave_team, max_coin_discount_pkr, my_coin_balance, '
   || 'my_coin_batches, my_coins_expiring_within, my_discount_on, my_friends, '
-  || 'my_orders, my_rank, my_referral_code, my_referrals, my_streak_days, '
-  || 'my_team, order_coin_state, pkt_date, pkt_day_start, pkt_week_start, '
+  || 'my_orders, my_rank, my_referral_code, my_referrals, '
+  || 'my_rewarded_ads_left_today, my_streak_days, my_team, my_team_standing, '
+  || 'order_coin_state, pkt_date, pkt_day_start, pkt_week_start, '
   || 'place_order, register_push_token, remove_friend, request_account_deletion, '
-  || 'store_feed, team_roster',
-  'the signed-in callable surface is exactly these thirty-two functions');
+  || 'store_feed, team_roster, team_standings',
+  'the signed-in callable surface is exactly these thirty-five functions');
 
 -- The earning path is the one that must not be reachable, and it is the one an
 -- attacker would look for first.

@@ -7,6 +7,7 @@ import { Button } from '@/components/Button';
 import { Field } from '@/components/Field';
 import { Card, Divider, Row, Text } from '@/components/ui';
 import { Loading, Notice } from '@/components/Notice';
+import { TeamShareCard } from '@/components/TeamShareCard';
 import { earning, space } from '@/theme';
 import { useI18n, fill } from '@/i18n';
 import { supabase } from '@/lib/supabase';
@@ -20,6 +21,14 @@ interface Team {
   is_captain: boolean;
   member_count: number;
   member_max: number;
+}
+
+interface Standing {
+  rank: number;
+  of_total: number;
+  name: string;
+  members: number;
+  steps: number;
 }
 
 interface RosterRow {
@@ -45,6 +54,7 @@ export default function TeamScreen() {
 
   const [team, setTeam] = useState<Team | null>(null);
   const [roster, setRoster] = useState<RosterRow[]>([]);
+  const [standing, setStanding] = useState<Standing | null>(null);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
 
@@ -52,9 +62,10 @@ export default function TeamScreen() {
     setLoading(true);
     setFailed(false);
     try {
-      const [teamRes, rosterRes] = await Promise.all([
+      const [teamRes, rosterRes, standingRes] = await Promise.all([
         supabase.rpc('my_team'),
         supabase.rpc('team_roster'),
+        supabase.rpc('my_team_standing'),
       ]);
       if (teamRes.error || rosterRes.error) {
         setFailed(true);
@@ -62,6 +73,7 @@ export default function TeamScreen() {
       }
       setTeam(((teamRes.data ?? []) as Team[])[0] ?? null);
       setRoster((rosterRes.data ?? []) as RosterRow[]);
+      setStanding(((standingRes.data ?? []) as Standing[])[0] ?? null);
     } catch {
       setFailed(true);
     } finally {
@@ -88,7 +100,13 @@ export default function TeamScreen() {
       ) : null}
 
       {team ? (
-        <TeamRoster team={team} roster={roster} onChange={load} onLeft={() => router.back()} />
+        <TeamRoster
+          team={team}
+          roster={roster}
+          standing={standing}
+          onChange={load}
+          onLeft={() => router.back()}
+        />
       ) : (
         <NoTeam initialCode={incomingCode ?? ''} onJoined={load} />
       )}
@@ -183,11 +201,13 @@ function NoTeam({ initialCode, onJoined }: { initialCode: string; onJoined: () =
 function TeamRoster({
   team,
   roster,
+  standing,
   onChange,
   onLeft,
 }: {
   team: Team;
   roster: RosterRow[];
+  standing: Standing | null;
   onChange: () => void;
   onLeft: () => void;
 }) {
@@ -229,6 +249,36 @@ function TeamRoster({
         <Text variant="dataLarge">{team.invite_code}</Text>
         <Button label={t.team.share} onPress={share} />
       </Card>
+
+      {/*
+        §7.6 — office against office. The rank that matters here is the TEAM's,
+        and the card of it is what gets forwarded into a WhatsApp group, which is
+        where recruiting for a Lahore office team actually happens.
+      */}
+      {standing ? (
+        <Card>
+          <Row justify="space-between">
+            <Text variant="sectionTitle">{t.team.standing}</Text>
+            <Text variant="dataLarge">{formatNumber(standing.rank)}</Text>
+          </Row>
+          <Text variant="bodySmall" dim>
+            {fill(t.team.standingRank, {
+              rank: formatNumber(standing.rank),
+              total: formatNumber(standing.of_total),
+            })}
+          </Text>
+          <Text variant="dataSmall" faint>
+            {fill(t.team.cardSteps, { steps: formatNumber(standing.steps) })}
+          </Text>
+          <TeamShareCard
+            teamName={team.name}
+            rank={standing.rank}
+            ofTotal={standing.of_total}
+            steps={standing.steps}
+            inviteCode={team.invite_code}
+          />
+        </Card>
+      ) : null}
 
       <Card>
         <Text variant="sectionTitle" dim>
