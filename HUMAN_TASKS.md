@@ -238,3 +238,8 @@ These were needed to keep moving. None of them touch §0.
 - [x] 30 jest tests over phone normalisation, the offline queue's merge rule, and
       the PKT business day. `npm run check` runs everything in one command.
 - [x] ARCHITECTURE.md, for whoever picks this up next.
+- [x] DEFINITION_OF_DONE.md — §12 walked item by item, honest about which items
+      are proven by a test and which are merely built. Short version: everything
+      that can be enforced by the database or a script is; everything that needs
+      a phone is not, and that is the wall the P1 items above unblock.
+- [x] A development seed (`./scripts/seed.sh`), so the screens have data in them.
