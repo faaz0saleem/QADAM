@@ -34,3 +34,4 @@ Thumbs.db
 
 # test scratch
 db/test/.scratch-db
+.expo/export-check/

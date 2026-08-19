@@ -15,7 +15,8 @@
     "test": "node db/test/run.mjs",
     "test:keep": "node db/test/run.mjs --keep",
     "db:apply": "node db/test/run.mjs --apply-only",
-    "check": "npm run typecheck && npm test"
+    "check": "npm run typecheck && npm test",
+    "bundle": "expo export --platform android --output-dir .expo/export-check"
   },
   "devDependencies": {
     "@types/react": "~18.3.12",
@@ -30,6 +31,7 @@
     "@react-native-async-storage/async-storage": "^1.23.1",
     "@supabase/supabase-js": "^2.112.3",
     "expo": "~52.0.0",
+    "expo-asset": "^57.0.12",
     "expo-constants": "~17.0.0",
     "expo-font": "~13.0.0",
     "expo-haptics": "~14.0.0",

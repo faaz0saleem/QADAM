@@ -148,3 +148,18 @@ describe('§9.3 the fonts are actually bundled', () => {
     assert.deepEqual(unused, [], 'these bundled weights are not used by any style');
   });
 });
+
+describe('§9.7 the app stays small enough for the market it ships to', () => {
+  test('fonts are imported per weight, never from the package barrel', async () => {
+    // @expo-google-fonts packages have no `exports` map, so a barrel import
+    // pulls every weight the package ships — about 6 MB of Inter alone. Caught
+    // by `npx expo export`, not by the typechecker, so it needs a guard here.
+    const source = await readFile(join(repoRoot, 'src', 'theme', 'fonts.ts'), 'utf8');
+    const barrelImports = [...source.matchAll(/from '(@expo-google-fonts\/[^/']+)'/g)]
+      .map((m) => m[1]);
+    assert.deepEqual(
+      barrelImports, [],
+      'import from the per-weight subpath (e.g. @expo-google-fonts/inter/400Regular)',
+    );
+  });
+});

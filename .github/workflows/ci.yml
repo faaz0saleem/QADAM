@@ -45,3 +45,9 @@ jobs:
       # db/test/margin_rule.test.mjs.
       - name: Tests
         run: npm test
+
+      # The typechecker does not link the app. Bundling does, and it is what
+      # catches a missing native module, a config file the module system cannot
+      # parse, and an import that quietly drags in six megabytes of fonts.
+      - name: Bundle
+        run: npm run bundle
