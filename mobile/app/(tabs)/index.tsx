@@ -8,6 +8,7 @@ import { LedgerRule } from '@/components/LedgerRule';
 import { earning, space, MIN_TAP_TARGET, radius } from '@/theme';
 import { useI18n, fill } from '@/i18n';
 import { useSteps } from '@/hooks/useSteps';
+import { openStepPermissionSettings } from '@/lib/health';
 import { useWallet } from '@/hooks/useWallet';
 import { formatNumber, relativeTime } from '@/lib/format';
 
@@ -167,7 +168,11 @@ function PermissionScreen() {
         </Pressable>
         <Pressable
           style={styles.ctaQuiet}
-          onPress={() => void Linking.openSettings()}
+          onPress={() =>
+            void (Platform.OS === 'android'
+              ? openStepPermissionSettings()
+              : Linking.openSettings())
+          }
           accessibilityRole="button"
         >
           <Text variant="bodySmall" dim>

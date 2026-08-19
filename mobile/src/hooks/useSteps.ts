@@ -4,7 +4,7 @@ import { AppState } from 'react-native';
 import { createStore, useStore } from '@/lib/store';
 import { syncSteps } from '@/lib/sync';
 import { lastSyncedAt } from '@/lib/queue';
-import { requestStepPermission, type HealthStatus } from '@/lib/health';
+import { checkStepPermission, requestStepPermission, type HealthStatus } from '@/lib/health';
 import { hasBeenAsked, registerForPush } from '@/lib/notifications';
 import { registerBackgroundSync } from '@/lib/background';
 import { refreshWallet, walletStore } from './useWallet';
@@ -88,7 +88,9 @@ export function useForegroundSync() {
 
   useEffect(() => {
     void (async () => {
-      const status = await requestStepPermission();
+      // Check, do not request. A system dialog on every foreground is how an app
+      // gets permanently denied.
+      const status = await checkStepPermission();
       stepStore.set({ permission: status, lastSynced: await lastSyncedAt() });
       if (status === 'granted') await sync();
       await refreshWallet();

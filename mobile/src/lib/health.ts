@@ -30,7 +30,19 @@ function pktDay(d: Date): string {
 }
 
 // ── Android: Health Connect ────────────────────────────────────────────────
-async function androidPermission(): Promise<HealthStatus> {
+async function androidCheck(): Promise<HealthStatus> {
+  const hc = await import('react-native-health-connect');
+  const status = await hc.getSdkStatus();
+  if (status !== hc.SdkAvailabilityStatus.SDK_AVAILABLE) return 'unavailable';
+
+  await hc.initialize();
+  const granted = await hc.getGrantedPermissions();
+  return granted.some((p) => p.recordType === 'Steps' && p.accessType === 'read')
+    ? 'granted'
+    : 'denied';
+}
+
+async function androidRequest(): Promise<HealthStatus> {
   const hc = await import('react-native-health-connect');
   const status = await hc.getSdkStatus();
   if (status !== hc.SdkAvailabilityStatus.SDK_AVAILABLE) return 'unavailable';
@@ -67,6 +79,12 @@ async function androidRead(sinceDays: number): Promise<DailySteps[]> {
 }
 
 // ── iOS: HealthKit ─────────────────────────────────────────────────────────
+//
+// Apple deliberately does not report READ permission status: an app that could
+// ask "may I read steps?" could infer things about the user from the answer. So
+// there is no check, only a request, and initHealthKit is silent after the first
+// grant. Calling it on launch is therefore safe in a way the Android equivalent
+// is not.
 async function iosPermission(): Promise<HealthStatus> {
   const { default: AppleHealthKit } = await import('react-native-health');
   const permissions = {
@@ -106,12 +124,46 @@ async function iosRead(sinceDays: number): Promise<DailySteps[]> {
 }
 
 // ── the interface the app uses ─────────────────────────────────────────────
+
+/**
+ * Ask the OS what we already have, WITHOUT prompting.
+ *
+ * This is what runs on every foreground. Calling requestPermission there instead
+ * puts a system dialog in front of someone every time they open the app, which
+ * is both maddening and the fastest way to get permanently denied.
+ */
+export async function checkStepPermission(): Promise<HealthStatus> {
+  try {
+    return Platform.OS === 'android' ? await androidCheck() : await iosPermission();
+  } catch (e) {
+    console.warn('health permission check failed', e);
+    return 'unavailable';
+  }
+}
+
+/** Prompt. Only ever from a button the user pressed. */
 export async function requestStepPermission(): Promise<HealthStatus> {
   try {
-    return Platform.OS === 'android' ? await androidPermission() : await iosPermission();
+    return Platform.OS === 'android' ? await androidRequest() : await iosPermission();
   } catch (e) {
-    console.warn('health permission failed', e);
+    console.warn('health permission request failed', e);
     return 'unavailable';
+  }
+}
+
+/**
+ * §7.1 — "a one-tap route to settings" when permission was refused. Health
+ * Connect has its own settings screen; the OS app settings page does not show
+ * health permissions at all on Android, so Linking.openSettings() would land
+ * someone somewhere that cannot help them.
+ */
+export async function openStepPermissionSettings(): Promise<void> {
+  if (Platform.OS !== 'android') return;
+  try {
+    const hc = await import('react-native-health-connect');
+    hc.openHealthConnectSettings();
+  } catch (e) {
+    console.warn('could not open Health Connect settings', e);
   }
 }
 
