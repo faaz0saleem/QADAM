@@ -228,4 +228,13 @@ These were needed to keep moving. None of them touch §0.
       verification, and the two push jobs. Android attestation is complete; iOS is not
       (see above).
 - [x] CI on every push: the full pgTAP suite against a real PostgreSQL 16, plus a Deno
-      typecheck and lint of the Edge Functions.
+      typecheck and lint of the Edge Functions. (Written and green locally — the
+      runner itself is blocked, see the P1 above.)
+- [x] Phone OTP sign-in, with the referral code step after first sign-in.
+- [x] Teams: create, join by code or deep link, roster, hand over, leave. Friends,
+      using the same code people already share for referrals.
+- [x] Push token registration (asked after the first coins are minted, not on first
+      launch) and background step sync every four hours.
+- [x] 30 jest tests over phone normalisation, the offline queue's merge rule, and
+      the PKT business day. `npm run check` runs everything in one command.
+- [x] ARCHITECTURE.md, for whoever picks this up next.

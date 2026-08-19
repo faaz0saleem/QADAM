@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Linking, Pressable, StyleSheet, View } from 'react-native';
+import { Linking, Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { Screen } from '@/components/Screen';
 import { Card, Row, Text } from '@/components/ui';
@@ -149,7 +149,7 @@ function PermissionScreen() {
       <Card>
         <Text variant="sectionTitle">{t.permission.title}</Text>
         <Text variant="body" dim>
-          {t.permission.bodyAndroid}
+          {Platform.OS === 'android' ? t.permission.bodyAndroid : t.permission.bodyIos}
         </Text>
         <Pressable style={styles.cta} onPress={grantPermission} accessibilityRole="button">
           <Text variant="sectionTitle">{t.permission.cta}</Text>

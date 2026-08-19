@@ -6,6 +6,7 @@ import { CoinValue } from '@/components/Coin';
 import { earning, space } from '@/theme';
 import { useI18n, fill } from '@/i18n';
 import { useWalletOnMount, type CoinBatch, type LedgerRow } from '@/hooks/useWallet';
+import { useRedemptionLock } from '@/hooks/useRedemptionLock';
 import { formatDate, formatNumber, relativeTime } from '@/lib/format';
 
 /**
@@ -16,9 +17,26 @@ import { formatDate, formatNumber, relativeTime } from '@/lib/format';
 export default function WalletScreen() {
   const { t, locale } = useI18n();
   const { balance, batches, ledger, loading, refresh } = useWalletOnMount();
+  const lock = useRedemptionLock();
 
   return (
     <Screen title={t.wallet.title} onRefresh={refresh} refreshing={loading}>
+      {/*
+        §6.1 — no redemption in an account's first seven days. Saying so up
+        front, with the date, beats a checkout that fails for reasons the user
+        cannot see. The server enforces it either way.
+      */}
+      {lock.locked && lock.unlocksAt ? (
+        <Card>
+          <Text variant="sectionTitle">
+            {fill(t.wallet.lockedUntil, { date: formatDate(lock.unlocksAt, locale) })}
+          </Text>
+          <Text variant="bodySmall" dim>
+            {t.wallet.lockedWhy}
+          </Text>
+        </Card>
+      ) : null}
+
       {batches.length === 0 && ledger.length === 0 ? (
         // §9.6 — empty states are invitations, not apologies.
         <EmptyState>{t.wallet.empty}</EmptyState>
