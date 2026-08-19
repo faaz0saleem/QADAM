@@ -126,3 +126,26 @@ begin
   set local role none;
   return v_n;
 end $$;
+
+-- Set the request JWT so auth.uid() resolves, WITHOUT switching database role —
+-- pgTAP's own functions still need to be callable around the assertion.
+create or replace function tests.act_as(p_user uuid)
+returns void
+language plpgsql as $$
+begin
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', p_user::text, 'role', 'authenticated')::text, true);
+end $$;
+
+-- A day of steps, already credited, for leaderboard fixtures.
+create or replace function tests.log_day(p_user uuid, p_date date, p_steps int,
+                                         p_flags text[] default '{}')
+returns void
+language sql as $$
+  insert into public.daily_steps (user_id, date, raw_steps, credited_steps, coins_awarded,
+                                  source, flags, attested)
+  values (p_user, p_date, p_steps, p_steps, p_steps / 100, 'health_connect', p_flags, true)
+  on conflict (user_id, date) do update
+    set raw_steps = excluded.raw_steps, credited_steps = excluded.credited_steps,
+        flags = excluded.flags;
+$$;

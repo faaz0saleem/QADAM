@@ -63,7 +63,9 @@ for t in supabase/tests/[0-9]*.sql; do
   bad="$(printf '%s\n' "$out" | grep -c '^not ok' || true)"
   good="$(printf '%s\n' "$out" | grep -c '^ok ' || true)"
   assertions=$((assertions+good+bad))
-  if [ "$bad" -gt 0 ] || printf '%s\n' "$out" | grep -qiE '^(psql:|ERROR:)'; then
+  if [ "$bad" -gt 0 ] \
+     || printf '%s\n' "$out" | grep -qiE '^(psql:|ERROR:)' \
+     || printf '%s\n' "$out" | grep -qi '^# Looks like you planned'; then
     fail=$((fail+1))
     printf '   %-58s FAILED\n' "$name"
     printf '%s\n' "$out" | grep -E '^(not ok|#|psql:|ERROR:|DETAIL:|CONTEXT:)' | sed 's/^/      /'
