@@ -15,6 +15,7 @@ export function Text({
   faint,
   variant = 'body',
   numberOfLines,
+  adjustsFontSizeToFit,
 }: {
   children: ReactNode;
   style?: TextStyle | TextStyle[];
@@ -22,12 +23,15 @@ export function Text({
   faint?: boolean;
   variant?: keyof typeof type;
   numberOfLines?: number;
+  /** Shrink to fit rather than wrap or clip. For the hero counter at 320px. */
+  adjustsFontSizeToFit?: boolean;
 }) {
   const { locale } = useI18n();
   const isData = variant.startsWith('data') || variant === 'counter';
   return (
     <RNText
       numberOfLines={numberOfLines}
+      adjustsFontSizeToFit={adjustsFontSizeToFit}
       style={[
         type[variant],
         { color: faint ? earning.textFaint : dim ? earning.textDim : earning.text },
@@ -53,15 +57,24 @@ export function Row({
   gap = space.md,
   align = 'center',
   justify = 'flex-start',
+  accessible,
+  accessibilityLabel,
 }: {
   children: ReactNode;
   style?: ViewStyle;
   gap?: number;
   align?: ViewStyle['alignItems'];
   justify?: ViewStyle['justifyContent'];
+  /** Announce the row as one thing rather than as its parts. */
+  accessible?: boolean;
+  accessibilityLabel?: string;
 }) {
   return (
-    <View style={[{ flexDirection: 'row', alignItems: align, justifyContent: justify, gap }, style]}>
+    <View
+      accessible={accessible}
+      accessibilityLabel={accessibilityLabel}
+      style={[{ flexDirection: 'row', alignItems: align, justifyContent: justify, gap }, style]}
+    >
       {children}
     </View>
   );

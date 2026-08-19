@@ -129,7 +129,11 @@ export default function FriendsScreen() {
                     </Text>
                   ) : null}
                 </View>
-                <Pressable onPress={() => void remove(friend.user_id)} accessibilityRole="button">
+                <Pressable
+                  onPress={() => void remove(friend.user_id)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${t.friends.remove}: ${friend.name ?? ''}`}
+                >
                   <Text variant="label" faint>
                     {t.friends.remove}
                   </Text>

@@ -32,6 +32,10 @@ export const Field = forwardRef<TextInput, TextInputProps & {
       <TextInput
         ref={ref}
         placeholderTextColor={earning.textFaint}
+        // The visible label is the screen-reader label; an input announcing only
+        // "text field" is an input nobody can fill in without sight (§9.7).
+        accessibilityLabel={label ?? props.placeholder}
+        accessibilityHint={hint}
         {...props}
         style={[
           styles.input,

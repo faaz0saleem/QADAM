@@ -72,7 +72,14 @@ function BatchCard({ batch }: { batch: CoinBatch }) {
 
   return (
     <Card style={lapsingSoon ? styles.lapsing : undefined}>
-      <Row justify="space-between">
+      <Row
+        justify="space-between"
+        accessible
+        accessibilityLabel={fill(t.wallet.batchAnnouncement, {
+          coins: formatNumber(batch.remaining),
+          days: String(batch.days_left),
+        })}
+      >
         <CoinValue coins={batch.remaining} size="large" />
         <Text variant="label" dim>
           {reasonLabel(batch.reason, t)}

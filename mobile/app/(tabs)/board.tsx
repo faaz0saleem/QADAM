@@ -97,7 +97,19 @@ export default function BoardScreen() {
       ) : (
         <View style={styles.list}>
           {rows.map((row) => (
-            <Row key={row.user_id} justify="space-between" style={styles.row}>
+            // Grouped: without this a screen reader reads "3", "Bilal Ahmed",
+            // "27,633" as three unrelated things on a screen of fifty numbers.
+            <Row
+              key={row.user_id}
+              justify="space-between"
+              style={styles.row}
+              accessible
+              accessibilityLabel={fill(t.board.rankAnnouncement, {
+                rank: formatNumber(row.rank),
+                name: row.name ?? '',
+                steps: formatNumber(row.steps),
+              })}
+            >
               <Row gap={space.md}>
                 <Text variant="dataSmall" faint style={styles.rank}>
                   {formatNumber(row.rank)}

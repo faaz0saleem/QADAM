@@ -34,7 +34,12 @@ export function Screen({
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <Text variant="screenTitle">{title}</Text>
+        {/* §9.7 — works at 320px. A long Urdu title beside a six-digit balance
+            is the case that overflows, so the title yields and the balance,
+            which is the hook, never wraps. */}
+        <Text variant="screenTitle" numberOfLines={1} style={styles.title}>
+          {title}
+        </Text>
         <View style={styles.balance}>
           <CoinValue coins={balance} size="medium" />
           <Text variant="label" faint style={styles.balanceLabel}>
@@ -68,7 +73,8 @@ const styles = StyleSheet.create({
     paddingTop: space.md,
     paddingBottom: space.lg,
   },
-  balance: { flexDirection: 'row', alignItems: 'baseline', gap: space.xs },
+  title: { flexShrink: 1, marginEnd: space.md },
+  balance: { flexDirection: 'row', alignItems: 'baseline', gap: space.xs, flexShrink: 0 },
   balanceLabel: { ...type.label },
   body: { paddingHorizontal: space.lg, gap: space.lg },
 });

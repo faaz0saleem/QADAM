@@ -39,7 +39,12 @@ export default function StepsScreen() {
     <Screen title={t.steps.title} onRefresh={steps.sync} refreshing={steps.syncing}>
       {/* 1 — the count */}
       <View style={styles.counterBlock}>
-        <Text variant="counter" style={styles.counter}>
+        <Text
+          variant="counter"
+          style={styles.counter}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+        >
           {formatNumber(steps.today)}
         </Text>
         <Text variant="label" dim>

@@ -226,7 +226,12 @@ function TeamRoster({
                 {t.team.captain}
               </Text>
             ) : team.is_captain ? (
-              <Pressable onPress={() => void handOver(member.user_id)} accessibilityRole="button">
+              <Pressable
+                onPress={() => void handOver(member.user_id)}
+                accessibilityRole="button"
+                // "Make captain" on its own is four identical buttons in a list.
+                accessibilityLabel={`${t.team.handOver}: ${member.name ?? ''}`}
+              >
                 <Text variant="label" dim>
                   {t.team.handOver}
                 </Text>

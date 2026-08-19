@@ -101,6 +101,68 @@ def check_copy() -> None:
                     )
 
 
+def opening_tag(text: str, start: int) -> str | None:
+    """
+    The props of a JSX element starting at `start`, up to the `>` that actually
+    closes the opening tag.
+
+    Naively scanning for the next `>` finds the one in `onPress={() => ...}`
+    instead, which reports every arrow-function handler as unlabelled. Track
+    brace depth and quotes and the arrow stops mattering.
+    """
+    depth = 0
+    quote: str | None = None
+    i = start
+    while i < len(text):
+        ch = text[i]
+        if quote:
+            if ch == '\\':
+                i += 2
+                continue
+            if ch == quote:
+                quote = None
+        elif ch in '"\'`':
+            quote = ch
+        elif ch == '{':
+            depth += 1
+        elif ch == '}':
+            depth -= 1
+        elif ch == '>' and depth == 0:
+            return text[start:i]
+        i += 1
+    return None
+
+
+def check_pressables_are_labelled() -> None:
+    """
+    §9.7, unannounced quality floor: "screen-reader labels on every interactive
+    element". A Pressable with only a bare string inside announces as "button"
+    and nothing else, which on a screen where every row is a button is the same
+    as announcing nothing.
+
+    Checked structurally because it is exactly the kind of thing that is correct
+    on the day it is written and wrong three screens later.
+    """
+    opener = re.compile(r'<Pressable\b')
+    for path in sources():
+        text = path.read_text(encoding='utf-8')
+        for match in opener.finditer(text):
+            props = opening_tag(text, match.start())
+            if props is None:
+                continue
+            if 'accessibilityRole' in props or 'accessibilityLabel' in props:
+                continue
+            # A wrapper may spread them in.
+            if re.search(r'\{\.\.\.\w+\}', props):
+                continue
+            line = text[: match.start()].count('\n') + 1
+            rel = path.relative_to(ROOT)
+            failures.append(
+                f'{rel}:{line}: <Pressable> without accessibilityRole or '
+                f'accessibilityLabel (README §9.7).'
+            )
+
+
 def check_no_gps() -> None:
     """§2 — no GPS anywhere. A transitive dependency cannot add one back silently."""
     banned = re.compile(r'expo-location|ACCESS_FINE_LOCATION|ACCESS_COARSE_LOCATION|getCurrentPosition')
@@ -119,6 +181,7 @@ def main() -> int:
 
     check_brass()
     check_copy()
+    check_pressables_are_labelled()
     check_no_gps()
 
     if failures:
@@ -127,7 +190,8 @@ def main() -> int:
             print(f'  {f}')
         return 1
 
-    print('design rules hold: brass is coin-only, no forbidden words, no location APIs')
+    print('design rules hold: brass is coin-only, copy is clean, every '
+          'Pressable is labelled, no location APIs')
     return 0
 
 
