@@ -47,9 +47,12 @@ contract. Do not weaken it. If a change makes it fail, the change is wrong.
   There is **no balance column anywhere**. Balance is always `SUM(delta)` over
   unexpired rows. If you find yourself caching a balance, cache it in a materialised
   view that can be dropped and rebuilt, never in a column users' money depends on.
-- `products.cost_pkr` is never granted to `anon` or `authenticated`. Column-level
-  grants enumerate the safe columns; adding a column to `products` does **not**
-  automatically expose it. Grant it explicitly in a migration, and never grant `cost_pkr`.
+- `cost_pkr` is never granted to `anon` or `authenticated` — on `products` **or**
+  on `order_items`. Grants on those tables enumerate the safe columns one by one.
+  A table-level `grant select` is a promise about every column the table will
+  ever have, and that is exactly how our margin leaked out through order lines
+  once already. `12_privileges_test.sql` inventories the whole client surface;
+  widening it means editing that test on purpose.
 - `private.app_config` lives in a schema PostgREST does not expose. The coin-to-rupee
   rate is server-side only and must never reach the client. The UI shows
   "1,000 steps = 10 coins" and per-product coin discounts — never a rate.

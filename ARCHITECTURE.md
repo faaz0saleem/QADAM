@@ -59,7 +59,8 @@ else's balance and call `submit_steps` directly, bypassing attestation.
 | No balance column exists | — | `02_coin_ledger_test.sql` asserts it |
 | Coins never move between users | `coin_debit_guard` trigger | `02`, `06` |
 | Daily cap, rate ceiling, backfill window | `submit_steps` | `03_step_ingestion_test.sql` |
-| `cost_pkr` unreachable by a client | column-level GRANT | `04_rls_test.sql` |
+| `cost_pkr` unreachable by a client | column-level GRANT | `04`, `12_privileges_test.sql` |
+| Nothing else is reachable either | the full grant inventory | `12_privileges_test.sql` |
 | Coin rate unreachable by a client | schema not exposed | `04_rls_test.sql` |
 | No ad in the shopping flow | `ad_impressions.placement` CHECK | `06_ads_referrals_test.sql` |
 | No user-funded prizes, no cash prizes | `challenges` CHECKs | `06_ads_referrals_test.sql` |
