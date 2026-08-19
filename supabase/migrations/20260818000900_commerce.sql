@@ -72,9 +72,7 @@ begin
   if v_user is null then
     raise exception 'not authenticated' using errcode = 'insufficient_privilege';
   end if;
-  if jsonb_typeof(p_items) <> 'array' or jsonb_array_length(p_items) = 0 then
-    raise exception 'place_order: no items' using errcode = 'check_violation';
-  end if;
+  perform assert_basket_is_sane(p_items);
   if coalesce(p_coins, 0) < 0 then
     raise exception 'place_order: coins cannot be negative' using errcode = 'check_violation';
   end if;

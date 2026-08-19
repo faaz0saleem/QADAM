@@ -246,3 +246,85 @@ describe('§6.1 one account per device', () => {
     });
   });
 });
+
+describe('one user cannot ask about another', () => {
+  // These four run as SECURITY DEFINER and take a user id, so without a guard
+  // they answer for whoever they are asked about — and user ids are visible on
+  // a leaderboard. Individually small; together, a directory of every user's
+  // habits readable by anyone with an account.
+
+  test('cannot read a stranger’s wallet through the discount preview', async () => {
+    await withRollback(async (c) => {
+      const me = await makeUser(c);
+      const them = await makeUser(c);
+      await c.query(`select credit_coins($1, 90000, 'steps')`, [them]);
+      const shirt = await makeProduct(c, { price: 3000, cost: 1000 });
+
+      await asUser(c, me, async () => {
+        await expectRejected(c, () =>
+          c.query('select affordable_discount_pkr($1, $2)', [them, shirt]),
+          /not your data/);
+        // and can still ask about themselves
+        const { rows } = await c.query('select affordable_discount_pkr($1, $2) as d', [me, shirt]);
+        assert.equal(rows[0].d, 0);
+      });
+    });
+  });
+
+  test('cannot read a stranger’s streak', async () => {
+    await withRollback(async (c) => {
+      const me = await makeUser(c);
+      const them = await makeUser(c);
+      await asUser(c, me, () =>
+        expectRejected(c, () => c.query('select current_streak($1)', [them]), /not your data/));
+    });
+  });
+
+  test('cannot read a stranger’s friends list', async () => {
+    await withRollback(async (c) => {
+      const me = await makeUser(c);
+      const them = await makeUser(c);
+      await asUser(c, me, () =>
+        expectRejected(c, () => c.query('select * from leaderboard_friends($1)', [them]),
+          /not your data/));
+    });
+  });
+
+  test('cannot pull a stranger’s board, which would reveal their city', async () => {
+    await withRollback(async (c) => {
+      const me = await makeUser(c, { city: 'Lahore' });
+      const them = await makeUser(c, { city: 'Karachi' });
+      await asUser(c, me, () =>
+        expectRejected(c, () => c.query(`select * from leaderboard_page($1, 'city')`, [them]),
+          /not your data/));
+    });
+  });
+
+  test('the server still asks on anyone’s behalf — service_role has no auth.uid()', async () => {
+    await withRollback(async (c) => {
+      const them = await makeUser(c);
+      await c.query(`select credit_coins($1, 5000, 'steps')`, [them]);
+      // No `set local role`: this is the Edge Function / cron path.
+      const { rows } = await c.query('select current_streak($1) as s', [them]);
+      assert.equal(rows[0].s, 0, 'the guard must not break the server path');
+    });
+  });
+});
+
+describe('a basket has a sane size', () => {
+  test('REJECTS an order with more lines than any real order has', async () => {
+    await withRollback(async (c) => {
+      const user = await makeUser(c);
+      const shirt = await makeProduct(c, { price: 3000, cost: 1000, stock: 100000 });
+      const items = Array.from({ length: 51 }, () => ({ product_id: shirt, qty: 1 }));
+
+      await asUser(c, user, () =>
+        expectRejected(c, () =>
+          c.query(
+            `select place_order($1::jsonb, '{}'::jsonb, '+923001234567', 'cod', 0)`,
+            [JSON.stringify(items)],
+          ),
+          /too many lines/));
+    });
+  });
+});

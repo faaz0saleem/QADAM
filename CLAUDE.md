@@ -508,3 +508,11 @@ section are notes, never amendments — §0–§13 above are the brief and are n
   minted only by AdMob's signed server-side verification callback. The general rule:
   if a parameter is something only the server can know, the client must not be able to
   name the field.
+- **A SECURITY DEFINER function that takes a user id answers for whoever it is asked
+  about.** Four client-callable functions did — the discount preview, the streak, and
+  both leaderboard queries — so any account could read a stranger's wallet, streak, city
+  and entire friends list, and user ids are visible on a leaderboard. The parameter has
+  to stay, because Edge Functions and cron jobs legitimately ask on someone's behalf, so
+  the guard is `assert_self`: a caller carrying a JWT may only ask about itself, and
+  service_role, which has no `auth.uid()`, is unaffected. Any new definer function taking
+  a user id needs the same first line.

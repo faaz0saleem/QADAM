@@ -72,3 +72,23 @@ alter table app_config enable row level security;
 
 revoke all on function config_num(text) from public;
 revoke all on function config_int(text) from public;
+
+-- ==========================================================================
+-- While here: place_order looped over whatever array it was handed. A basket of
+-- fifty thousand lines is not a shopping mistake, it is a way to hold a
+-- connection open and lock rows. The cap is far above any real order.
+-- ==========================================================================
+create or replace function assert_basket_is_sane(p_items jsonb) returns void
+language plpgsql immutable as $$
+begin
+  if jsonb_typeof(p_items) <> 'array' or jsonb_array_length(p_items) = 0 then
+    raise exception 'place_order: no items' using errcode = 'check_violation';
+  end if;
+  if jsonb_array_length(p_items) > 50 then
+    raise exception 'place_order: too many lines in one order (%)', jsonb_array_length(p_items)
+      using errcode = 'check_violation';
+  end if;
+end
+$$;
+
+revoke all on function assert_basket_is_sane(jsonb) from public, anon, authenticated;

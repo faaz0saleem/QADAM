@@ -79,6 +79,7 @@ const SERVER_ONLY_FUNCTIONS = [
   'respond_to_confirmation', 'queue_order_confirmation', 'grant_verified_ad_reward',
   'queue_expiry_warnings', 'queue_streak_warnings', 'refresh_leaderboards',
   'gen_invite_code', 'gen_referral_code',
+  'assert_basket_is_sane', 'assert_self',
 ];
 
 async function tableGrants(c) {
