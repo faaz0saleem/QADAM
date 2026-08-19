@@ -4,7 +4,7 @@ The brief's ship criteria, with evidence for each. "Proven" means a test asserts
 it and the test passes; "built, unverified" means the code exists and typechecks
 but nothing has run on a phone.
 
-Regenerate the evidence with `npm run check` (197 tests, typecheck clean).
+Regenerate the evidence with `npm run check` (202 tests, typecheck clean).
 
 ---
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Temperature, useTheme } from '../../src/theme/ThemeContext';
 import { Screen } from '../../src/components/Screen';
 import { CoinHeader } from '../../src/components/CoinHeader';
@@ -160,12 +160,46 @@ function ContextualCard() {
   );
 }
 
+/**
+ * §7.1 — "Handle the permission denial path properly. An app that shows a blank
+ * screen when health permission is refused loses the user permanently. Show what
+ * they're missing and a one-tap route to settings."
+ *
+ * So: what is not counting, why it matters, and a tap that lands in the right
+ * settings page. `unavailable` and `denied` need different destinations — one is
+ * a missing Health Connect install, the other is a revoked permission — and
+ * sending someone to the wrong one is the same as sending them nowhere.
+ */
 function PermissionCard({ onPress }: { onPress: () => void }) {
   const theme = useTheme();
   const { t } = useI18n();
+  const { permission } = useAppState();
+
+  async function route() {
+    if (permission === 'denied') {
+      // Already refused once: the OS will not prompt again, so the only way
+      // through is the settings app.
+      await Linking.openSettings().catch(() => {});
+      return;
+    }
+    if (permission === 'unavailable' && Platform.OS === 'android') {
+      // Health Connect is missing or too old. Send them to install it rather
+      // than to a settings page that has nothing to toggle.
+      await Linking.openURL(
+        'market://details?id=com.google.android.apps.healthdata',
+      ).catch(() =>
+        Linking.openURL(
+          'https://play.google.com/store/apps/details?id=com.google.android.apps.healthdata',
+        ).catch(() => {}),
+      );
+      return;
+    }
+    await onPress();
+  }
+
   return (
     <Pressable
-      onPress={onPress}
+      onPress={route}
       accessibilityRole="button"
       accessibilityLabel={`${t.permission.denied} ${t.permission.deniedCta}`}
       style={({ pressed }) => [
@@ -181,7 +215,10 @@ function PermissionCard({ onPress }: { onPress: () => void }) {
     >
       {/* §9.6: say what happened and what to do. Not "an error occurred". */}
       <Text style={[text.body, { color: theme.text }]}>{t.permission.denied}</Text>
-      <Text style={[text.body, { color: theme.coin, marginTop: space.xs }]}>
+      <Text style={[text.bodySmall, { color: theme.textMuted, marginTop: space.xs }]}>
+        {Platform.OS === 'android' ? t.permission.bodyAndroid : t.permission.bodyIos}
+      </Text>
+      <Text style={[text.body, { color: theme.coin, marginTop: space.md }]}>
         {t.permission.deniedCta} →
       </Text>
     </Pressable>

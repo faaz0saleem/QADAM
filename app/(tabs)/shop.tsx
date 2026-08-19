@@ -95,7 +95,6 @@ function CartBar() {
 function ProductCard({ product }: { product: Product }) {
   const theme = useTheme();
   const { t, fill } = useI18n();
-  const { add } = useCart();
 
   // §7.4: show what THIS user saves right now, given their balance — not a
   // hypothetical maximum. "Save PKR 180 with your coins" beats "up to 10% off".
@@ -107,7 +106,7 @@ function ProductCard({ product }: { product: Product }) {
 
   return (
     <Pressable
-      onPress={() => product.stock > 0 && add(product)}
+      onPress={() => router.push(`/product/${product.id}`)}
       disabled={product.stock === 0}
       accessibilityRole="button"
       accessibilityLabel={`${product.title}, ${formatPkr(product.pricePkr)} rupees${
