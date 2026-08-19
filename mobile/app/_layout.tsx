@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import { Stack } from 'expo-router';
+import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
 import {
@@ -15,6 +15,7 @@ import { NotoNastaliqUrdu_400Regular } from '@expo-google-fonts/noto-nastaliq-ur
 
 import { I18nProvider, loadStoredLocale, type Locale } from '@/i18n';
 import { earning } from '@/theme';
+import { useSession, useSessionWatcher } from '@/hooks/useSession';
 
 void SplashScreen.preventAutoHideAsync();
 
@@ -35,10 +36,6 @@ export default function RootLayout() {
     void loadStoredLocale().then(setLocale);
   }, []);
 
-  useEffect(() => {
-    if (fontsLoaded && locale) void SplashScreen.hideAsync();
-  }, [fontsLoaded, locale]);
-
   // Holding the splash rather than rendering in a fallback face: the step
   // counter is the first thing on screen and it reflowing from a system font to
   // JetBrains Mono is exactly the jitter §9.3 exists to prevent.
@@ -48,11 +45,41 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <I18nProvider initial={locale}>
         <StatusBar style="light" />
-        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: earning.bg } }}>
-          <Stack.Screen name="(tabs)" />
-        </Stack>
+        <SessionGate />
       </I18nProvider>
     </SafeAreaProvider>
+  );
+}
+
+/**
+ * The only place that decides whether someone is looking at the app or at the
+ * sign-in flow. Keeping it in one component means no screen has to remember to
+ * check, and a route added later is protected by default.
+ */
+function SessionGate() {
+  const { status } = useSession();
+  const segments = useSegments();
+  const router = useRouter();
+
+  useSessionWatcher();
+
+  useEffect(() => {
+    if (status === 'loading') return;
+    void SplashScreen.hideAsync();
+
+    const inAuthFlow = segments[0] === '(auth)';
+    if (status === 'signed_out' && !inAuthFlow) {
+      router.replace('/phone');
+    } else if (status === 'signed_in' && inAuthFlow) {
+      router.replace('/');
+    }
+  }, [status, segments, router]);
+
+  return (
+    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: earning.bg } }}>
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="(auth)" />
+    </Stack>
   );
 }
 
