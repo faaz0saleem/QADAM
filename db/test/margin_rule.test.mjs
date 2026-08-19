@@ -270,3 +270,32 @@ describe('§0 at order level — the header cannot be used to route around the i
     });
   });
 });
+
+describe('§3.3 the P0 alarm', () => {
+  test('margin_breaches is empty, and stays empty under the worst legal order', async () => {
+    await withRollback(async (c) => {
+      const user = await makeUser(c);
+      // Every line discounted to its §0 ceiling, across both arms of the rule.
+      const order = await makeOrder(c, user);
+      let subtotal = 0;
+      let discount = 0;
+      for (const [price, cost, qty] of [[3000, 1000, 3], [100000, 96000, 1], [1500, 500, 2]]) {
+        const p = await makeProduct(c, { price, cost });
+        const { rows } = await c.query('select max_coin_discount_pkr($1,$2) * $3 as m',
+          [price, cost, qty]);
+        await addItem(c, order, p, { qty, discount: rows[0].m });
+        subtotal += price * qty;
+        discount += rows[0].m;
+      }
+      await c.query(
+        `update orders set subtotal_pkr = $2::int, discount_pkr = $3::int, coins_spent = $3::int,
+                           coin_value_pkr = 1, total_pkr = $2::int - $3::int where id = $1`,
+        [order, subtotal, discount],
+      );
+      await flushDeferred(c);
+
+      const { rows } = await c.query('select * from margin_breaches');
+      assert.deepEqual(rows, [], 'a margin breach means a constraint has been bypassed');
+    });
+  });
+});

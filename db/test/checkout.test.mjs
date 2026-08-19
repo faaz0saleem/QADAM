@@ -366,3 +366,37 @@ describe('§7.7 referrals pay on the first purchase, not on install', () => {
     });
   });
 });
+
+describe('§6.1 the redemption lock is visible before checkout, not only at it', () => {
+  test('a new account is shown no discount rather than one it cannot use', async () => {
+    await withRollback(async (c) => {
+      const fresh = await makeUser(c, { ageDays: 2 });
+      await c.query(`select credit_coins($1, 50000, 'steps')`, [fresh]);
+      const shirt = await makeProduct(c, { price: 3000, cost: 1000 });
+
+      const { rows } = await c.query('select affordable_discount_pkr($1,$2) as d', [fresh, shirt]);
+      assert.equal(rows[0].d, 0, 'the shop must not promise what checkout will refuse');
+    });
+  });
+
+  test('and checkout still refuses as the backstop', async () => {
+    await withRollback(async (c) => {
+      const fresh = await makeUser(c, { ageDays: 2 });
+      await c.query(`select credit_coins($1, 50000, 'steps')`, [fresh]);
+      const shirt = await makeProduct(c, { price: 3000, cost: 1000 });
+      await expectRejected(c, () =>
+        placeOrder(c, fresh, [{ product_id: shirt, qty: 1 }], { coins: 5000 }),
+        /first 7 days/);
+    });
+  });
+
+  test('the same account sees the discount once the lock lifts', async () => {
+    await withRollback(async (c) => {
+      const settled = await makeUser(c, { ageDays: 9 });
+      await c.query(`select credit_coins($1, 50000, 'steps')`, [settled]);
+      const shirt = await makeProduct(c, { price: 3000, cost: 1000 });
+      const { rows } = await c.query('select affordable_discount_pkr($1,$2) as d', [settled, shirt]);
+      assert.equal(rows[0].d, 300);
+    });
+  });
+});

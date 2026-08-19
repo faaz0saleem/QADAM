@@ -10,6 +10,7 @@ declare
   v_ceiling  int;
   v_eligible boolean;
   v_wallet   int;
+  v_created  timestamptz;
 begin
   select max_coin_discount_pkr(p.price_pkr, p.cost_pkr) * p_qty,
          coalesce(c.coin_eligible, true)
@@ -19,6 +20,16 @@ begin
   where p.id = p_product;
 
   if v_ceiling is null or not v_eligible then
+    return 0;
+  end if;
+
+  -- §6.1's redemption lock has to be visible HERE, not only at checkout. A shop
+  -- that advertises "save PKR 180 with your coins" to an account that cannot yet
+  -- redeem sends the user to a checkout that refuses them, which reads as a bug
+  -- and costs the order. spend_coins still refuses as the backstop.
+  select created_at into v_created from users where id = p_user;
+  if v_created is null
+     or v_created > now() - make_interval(days => config_int('REDEMPTION_LOCK_DAYS')) then
     return 0;
   end if;
 
