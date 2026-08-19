@@ -11,6 +11,23 @@ deleted, so you can see what has already been handled.
 
 ## Blocking now
 
+- [ ] **P1 · BLOCKING for CI** — Turn on GitHub Actions for this repository
+      Why: every CI run so far has died in about two seconds with no runner
+      assigned and no step output at all — not a failing test, a job that never
+      started. The workflow YAML parses, and the full suite passes locally
+      (`./scripts/test.sh`, `mobile: npx tsc --noEmit`, `scripts/check-design.py`).
+      I removed the one third-party action so the workflow now depends on nothing
+      but `actions/checkout`, and the next run failed the same way, which rules
+      out an action-permissions policy on marketplace actions.
+      What is left is a repository or account setting only you can reach:
+      Settings → Actions → General → check "Allow all actions and reusable
+      workflows" is selected and that Actions is enabled for this repo. If it is
+      already on, check github.com/settings/billing for a spending limit or a
+      payment issue — this is a public repo so standard runners should be free,
+      but a blocked account still stops jobs before they start.
+      Until this is sorted, the checks run locally and I run them before every
+      commit; nothing has been pushed without them passing.
+
 - [ ] **P1 · BLOCKING** — Create the Supabase project, paste the URL and anon key into `.env.local`
       Why: nothing runs against a real database without it. The schema and its tests
       run locally today (`./scripts/test.sh`, no docker needed), but no app can talk
