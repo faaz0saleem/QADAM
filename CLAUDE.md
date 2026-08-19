@@ -516,3 +516,46 @@ section are notes, never amendments — §0–§13 above are the brief and are n
   the guard is `assert_self`: a caller carrying a JWT may only ask about itself, and
   service_role, which has no `auth.uid()`, is unaffected. Any new definer function taking
   a user id needs the same first line.
+
+---
+
+## 15. WORKING AGREEMENTS (instructions given in conversation)
+
+Standing instructions from the human, written down so that every session and every
+agent starts with them. These are additions to the brief, not amendments — §0–§13
+are unchanged.
+
+**15.1 — Every instruction goes in the repo.**
+Anything the human tells me in conversation gets written into this section (or into a
+document under `docs/` if it is long enough to warrant one) in the same turn it is
+given. Nothing important is allowed to live only in a chat transcript, because the next
+session and the next agent will not have it. If an instruction contradicts something
+already written here, replace the old text rather than stacking a caveat on it, and say
+in the commit message what changed.
+
+**15.2 — Report after completing anything big.**
+When a substantial piece of work lands — a phase, a subsystem, a migration set, a
+security fix — say what was done, in plain terms, without waiting to be asked. The
+report covers: what now works, what it cost or changed elsewhere, what broke or was
+found broken along the way, and what is still missing. State the tests that back it. A
+finished thing that nobody is told about is not finished.
+
+**15.3 — Say what is needed from the human, every time.**
+Blockers, credentials, decisions and real-world actions go in `HUMAN_TASKS.md` as they
+are discovered, and the ones that matter get repeated in the message. Never sit on a
+blocker.
+
+**15.4 — Two operating documents sit beside this brief, and both bind.**
+- `docs/OPERATIONS.md` — the App Store framing risk, the business registration and
+  banking chain that gates COD, brand agreements, support, backups and security. Its
+  §1 must be read before any further iOS work.
+- `docs/METRICS.md` — the event spec, the weekly dashboard, and the Phase 1 retention
+  gates. Those gates decide whether Phase 2 is built at all, and §10's phase order is
+  enforced by them. Do not build commerce, sign a brand or order stock while the gates
+  are unmet or unmeasured.
+
+**15.5 — The Phase 1 gate is a stop condition, not a target.**
+`docs/METRICS.md` §1.2 defines green, amber and red. Any two reds, or a red on D7,
+means stop and change something structural. An agent that finds itself building Phase 2
+features while the gates are red or unmeasured is doing the thing §6 of OPERATIONS
+warns about, and should say so rather than continue.

@@ -67,7 +67,9 @@ migration set run under plain Postgres.
 ## Layout
 
 ```
-CLAUDE.md               the brief — read this first
+CLAUDE.md               the brief — read this first (§15 is the standing instructions)
+docs/OPERATIONS.md      the half that isn't code: store risk, banking, brands, support
+docs/METRICS.md         the event spec, and the Phase 1 gates that decide Phase 2
 HUMAN_TASKS.md          accounts, credentials and decisions I need from you
 supabase/migrations/    the schema, in order
 supabase/cron.sql       pg_cron schedules (leaderboards, expiry warnings)
