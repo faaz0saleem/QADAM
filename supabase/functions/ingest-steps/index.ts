@@ -9,11 +9,7 @@
 // from the body, because a user id in a body is the first field an attacker edits.
 import { serviceClient, callerId, json } from '../_shared/supabase.ts';
 import { verifyAttestation, type Platform } from '../_shared/attest.ts';
-
-interface Sample {
-  date: string;       // YYYY-MM-DD, the device's local (PKT) day
-  raw_steps: number;
-}
+import { sanitiseSamples, type Sample } from '../_shared/samples.ts';
 
 interface Body {
   samples: Sample[];
@@ -83,20 +79,3 @@ Deno.serve(async (req) => {
 
   return json(data);
 });
-
-// The client is untrusted input. Bound the array, coerce the numbers, drop the
-// rest. The database enforces the real rules; this just stops absurd payloads
-// reaching it.
-function sanitiseSamples(input: unknown): Sample[] {
-  if (!Array.isArray(input)) return [];
-  const out: Sample[] = [];
-  for (const s of input.slice(0, 14)) {
-    if (typeof s !== 'object' || s === null) continue;
-    const date = (s as Sample).date;
-    const steps = Number((s as Sample).raw_steps);
-    if (typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
-    if (!Number.isFinite(steps) || steps < 0) continue;
-    out.push({ date, raw_steps: Math.min(Math.floor(steps), 10_000_000) });
-  }
-  return out;
-}

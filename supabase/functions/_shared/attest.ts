@@ -9,6 +9,8 @@
 // Failure is also silent to the caller. §6.1: reject unattested submissions
 // without telling the attacker why.
 
+import { b64u, b64uBytes, pemToDer, toBase64Url } from './encoding.ts';
+
 export type Platform = 'android' | 'ios';
 
 export interface AttestResult {
@@ -73,7 +75,7 @@ async function verifyPlayIntegrity(token: string, nonce: string): Promise<Attest
   // The nonce binds this attestation to this request. Without it a single valid
   // token could be captured and replayed indefinitely.
   const echoed = payload.requestDetails?.nonce;
-  if (echoed !== base64Url(nonce)) return FAIL('nonce mismatch');
+  if (echoed !== toBase64Url(nonce)) return FAIL('nonce mismatch');
 
   if (payload.requestDetails?.requestPackageName !== packageName) {
     return FAIL('package mismatch');
@@ -161,31 +163,4 @@ function verifyAppAttest(_token: string, _nonce: string): Promise<AttestResult> 
   const bundleId = Deno.env.get('APPLE_APP_ATTEST_BUNDLE_ID');
   if (!teamId || !bundleId) return Promise.resolve(FAIL('app attest not configured'));
   return Promise.resolve(FAIL('app attest verification not implemented — see HUMAN_TASKS.md'));
-}
-
-// ── small helpers ──────────────────────────────────────────────────────────
-function b64u(s: string): string {
-  return b64uBytes(new TextEncoder().encode(s));
-}
-
-function b64uBytes(bytes: Uint8Array): string {
-  let bin = '';
-  for (const b of bytes) bin += String.fromCharCode(b);
-  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
-
-/** Play Integrity echoes the nonce base64url-encoded, without padding. */
-function base64Url(s: string): string {
-  return s.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
-
-function pemToDer(pem: string): BufferSource {
-  const body = pem
-    .replace(/-----BEGIN [^-]+-----/, '')
-    .replace(/-----END [^-]+-----/, '')
-    .replace(/\s+/g, '');
-  const bin = atob(body);
-  const out = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
-  return out;
 }

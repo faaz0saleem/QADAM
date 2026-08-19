@@ -7,6 +7,7 @@
 // The reward amount in Google's callback is IGNORED. Coins come from
 // private.app_config, server-side (§13.2).
 import { serviceClient, json } from '../_shared/supabase.ts';
+import { decodeBase64, derToRawEcdsa } from '../_shared/encoding.ts';
 
 const VERIFIER_KEYS_URL = 'https://gstatic.com/admob/reward/verifier-keys.json';
 
@@ -100,43 +101,4 @@ async function verifierKeys(): Promise<VerifierKey[]> {
   const keys: VerifierKey[] = body.keys ?? [];
   keyCache = { fetchedAt: Date.now(), keys };
   return keys;
-}
-
-function decodeBase64(b64: string): Uint8Array {
-  const bin = atob(b64);
-  const out = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
-  return out;
-}
-
-/** SEQUENCE { INTEGER r, INTEGER s } → 32-byte r ‖ 32-byte s. */
-function derToRawEcdsa(der: Uint8Array): Uint8Array | null {
-  if (der[0] !== 0x30) return null;
-  let i = 2;
-  if (der[1] & 0x80) i = 2 + (der[1] & 0x7f);
-
-  if (der[i] !== 0x02) return null;
-  const rLen = der[i + 1];
-  const r = der.slice(i + 2, i + 2 + rLen);
-  i = i + 2 + rLen;
-
-  if (der[i] !== 0x02) return null;
-  const sLen = der[i + 1];
-  const s = der.slice(i + 2, i + 2 + sLen);
-
-  const out = new Uint8Array(64);
-  out.set(trimOrPad(r), 0);
-  out.set(trimOrPad(s), 32);
-  return out;
-}
-
-/** DER integers carry a leading zero when the high bit is set; raw form does not. */
-function trimOrPad(v: Uint8Array): Uint8Array {
-  let start = 0;
-  while (start < v.length - 1 && v[start] === 0) start++;
-  const trimmed = v.slice(start);
-  if (trimmed.length === 32) return trimmed;
-  const out = new Uint8Array(32);
-  out.set(trimmed, 32 - trimmed.length);
-  return out;
 }

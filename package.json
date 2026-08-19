@@ -14,8 +14,9 @@
     "app:typecheck": "npm --prefix mobile run typecheck",
     "app:start": "npm --prefix mobile run start",
     "app:test": "npm --prefix mobile test",
-    "check": "./scripts/test.sh && ./scripts/test-concurrency.sh && npm --prefix mobile run typecheck && npm --prefix mobile test && python3 scripts/check-design.py",
-    "test:concurrency": "./scripts/test-concurrency.sh"
+    "check": "./scripts/test.sh && ./scripts/test-concurrency.sh && deno test supabase/functions/_shared/ && npm --prefix mobile run typecheck && npm --prefix mobile test && python3 scripts/check-design.py",
+    "test:concurrency": "./scripts/test-concurrency.sh",
+    "functions:test": "deno test supabase/functions/_shared/"
   },
   "engines": {
     "node": ">=20"
