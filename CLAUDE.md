@@ -485,3 +485,16 @@ section are notes, never amendments — §0–§13 above are the brief and are n
   key parity between English and Urdu, brass never filling a non-coin surface (§9.2), no
   hardcoded hex outside the palette, and tabular figures on every numeric style (§9.3).
   None of these is the sort of rule anyone breaks deliberately.
+- **`..._lockdown.sql` must stay the last migration.** Two defaults conspire against
+  this schema: Postgres grants EXECUTE on a new function to PUBLIC, and Supabase grants
+  on new tables to `anon` and `authenticated`. Both meant that every function and view
+  added after the RLS migration was silently client-reachable — including
+  `record_courier_status`, which burns a customer's coins, behind a courier tracking
+  number that is short and sequential. Neither default exists on a bare Postgres, so
+  neither was visible in local tests. The lockdown migration revokes the world, hands
+  back an explicit list, and turns the default privileges off so the next migration
+  cannot re-open it. `db/test/grants.test.mjs` pins the whole surface.
+- **`npm run bundle` catches what the typechecker cannot.** Metro linked the app and
+  found a Babel config the module system could not parse, and a font import from a
+  package barrel that dragged in every weight — about 10 MB of typefaces in an app for
+  a market that pays by the megabyte. It is a CI step for that reason.
