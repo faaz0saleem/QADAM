@@ -6,7 +6,7 @@
 
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { withRollback, expectRejected, makeUser } from './helpers.mjs';
+import { withRollback, expectRejected, makeUser, asUser } from './helpers.mjs';
 
 const today = async (c) => (await c.query('select pkt_date() as d')).rows[0].d;
 const yesterday = async (c) => (await c.query('select pkt_date() - 1 as d')).rows[0].d;
@@ -271,6 +271,55 @@ describe('§13.2 the client cannot price its own steps', () => {
       assert.equal(await submit(c, user, day, 10000), 0);
       assert.equal((await dayRow(c, user, day)).raw_steps, 10000);
       assert.equal(await balance(c, user), 0);
+    });
+  });
+});
+
+describe('§6.1 the client cannot claim its own attestation', () => {
+  test('submit_steps has no attested argument at all', async () => {
+    await withRollback(async (c) => {
+      const { rows } = await c.query(
+        `select pg_get_function_arguments(p.oid) as args from pg_proc p
+         join pg_namespace n on n.oid = p.pronamespace
+         where n.nspname = 'public' and p.proname = 'submit_steps'`,
+      );
+      assert.equal(rows.length, 1, 'exactly one overload — an old one would be a way back in');
+      assert.doesNotMatch(rows[0].args, /attest|flag/i);
+      assert.equal(rows[0].args, 'p_date date, p_raw integer, p_source text');
+    });
+  });
+
+  test('steps sent by a client are recorded and credited nothing', async () => {
+    await withRollback(async (c) => {
+      const user = await makeUser(c);
+      const { rows: day } = await c.query('select pkt_date() - 1 as d');
+
+      const coins = await asUser(c, user, async () =>
+        (await c.query(`select submit_steps($1, 12000, 'health_connect') as coins`, [day[0].d]))
+          .rows[0].coins);
+
+      assert.equal(coins, 0, 'a client-reported figure must never mint');
+      const row = await dayRow(c, user, day[0].d);
+      assert.equal(row.raw_steps, 12000, 'but the user still sees their own total (§7.3)');
+      assert.equal(row.credited_steps, 0);
+      assert.equal(await balance(c, user), 0);
+    });
+  });
+
+  test('an attested submission later the same day tops the day up', async () => {
+    await withRollback(async (c) => {
+      const user = await makeUser(c);
+      const { rows: day } = await c.query('select pkt_date() - 1 as d');
+
+      // The offline queue lands here while the Edge Function is unreachable.
+      await asUser(c, user, () =>
+        c.query(`select submit_steps($1, 12000, 'health_connect')`, [day[0].d]));
+      assert.equal(await balance(c, user), 0);
+
+      // Then ingest-steps verifies a real token and calls award_steps.
+      const coins = await submit(c, user, day[0].d, 12000, { attested: true });
+      assert.equal(coins, 120, 'the queued steps become creditable, once');
+      assert.equal(await balance(c, user), 120);
     });
   });
 });

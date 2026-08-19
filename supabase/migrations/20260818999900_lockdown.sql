@@ -85,14 +85,14 @@ grant execute on function pkt_week_start(timestamptz)                     to ano
 grant execute on function coin_balance(uuid)                              to authenticated;
 grant execute on function affordable_discount_pkr(uuid, uuid, int)        to authenticated;
 grant execute on function current_streak(uuid)                            to authenticated;
-grant execute on function submit_steps(date, int, text, boolean, text[])  to authenticated;
+grant execute on function submit_steps(date, int, text)                    to authenticated;
 grant execute on function place_order(jsonb, jsonb, text, text, int)      to authenticated;
 grant execute on function leaderboard_page(uuid, text, text, int)         to authenticated;
 grant execute on function leaderboard_friends(uuid, text)                 to authenticated;
 grant execute on function create_team(text, text)                         to authenticated;
 grant execute on function join_team(text)                                 to authenticated;
 grant execute on function team_roster(uuid)                               to authenticated;
-grant execute on function claim_rewarded_ad()                             to authenticated;
+grant execute on function rewarded_ads_left_today()                        to authenticated;
 grant execute on function my_referrals()                                  to authenticated;
 
 -- Everything else is server-side only, and the sharp ones are worth naming:
@@ -104,6 +104,7 @@ grant execute on function my_referrals()                                  to aut
 --   record_courier_status         — could burn a stranger's coins from a guessed
 --                                   tracking number
 --   respond_to_confirmation       — the WhatsApp webhook's entry point
+--   grant_verified_ad_reward      — mints; only the AdMob SSV callback may call it
 --   queue_order_confirmation      — could queue messages against any order
 --   queue_expiry_warnings, queue_streak_warnings, refresh_leaderboards — cron only
 --   gen_invite_code, gen_referral_code — cheap to call, no reason to expose

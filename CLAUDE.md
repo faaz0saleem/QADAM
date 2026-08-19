@@ -498,3 +498,13 @@ section are notes, never amendments — §0–§13 above are the brief and are n
   found a Babel config the module system could not parse, and a font import from a
   package barrel that dragged in every weight — about 10 MB of typefaces in an app for
   a market that pays by the megabyte. It is a CI step for that reason.
+- **A client can never assert its own integrity.** Two functions took a claim from the
+  caller and believed it. `submit_steps` accepted `p_attested`, so any signed-in user
+  could mint a full day's coins by passing `true` and routing around the attestation
+  Edge Function entirely. `claim_rewarded_ad` paid out with no evidence a video was
+  ever shown. Both were fixed by removing the client's ability to make the claim rather
+  than by validating it: `submit_steps` has no attestation argument and always credits
+  zero (it still records raw steps, which §7.3 shows the user), and rewarded coins are
+  minted only by AdMob's signed server-side verification callback. The general rule:
+  if a parameter is something only the server can know, the client must not be able to
+  name the field.

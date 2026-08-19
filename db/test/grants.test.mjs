@@ -50,7 +50,8 @@ const EXPECTED_TABLES = {
  * because each one is a specific thing that must not leak.
  */
 const MUST_BE_UNREACHABLE = [
-  'app_config',          // holds COIN_VALUE_PKR — §4 forbids publishing the rate
+  'app_config',            // holds COIN_VALUE_PKR — §4 forbids publishing the rate
+  'ad_reward_callbacks',   // AdMob transaction ids; a client must not see or seed them
   'fraud_events',        // tells an attacker which check caught them
   'order_confirmations', // a token here confirms or cancels an order
   'coin_liability',      // a rupee figure derived from the coin rate
@@ -67,7 +68,7 @@ const CLIENT_FUNCTIONS = [
   'submit_steps', 'place_order',
   'leaderboard_page', 'leaderboard_friends',
   'create_team', 'join_team', 'team_roster',
-  'claim_rewarded_ad', 'my_referrals',
+  'rewarded_ads_left_today', 'my_referrals',
 ];
 
 /** Reaching any of these from a client is a privilege escalation. */
@@ -75,7 +76,7 @@ const SERVER_ONLY_FUNCTIONS = [
   'config_num', 'config_int',
   'award_steps', 'credit_coins', 'spend_coins', 'refund_order_coins',
   'set_order_status', 'record_courier_status',
-  'respond_to_confirmation', 'queue_order_confirmation',
+  'respond_to_confirmation', 'queue_order_confirmation', 'grant_verified_ad_reward',
   'queue_expiry_warnings', 'queue_streak_warnings', 'refresh_leaderboards',
   'gen_invite_code', 'gen_referral_code',
 ];

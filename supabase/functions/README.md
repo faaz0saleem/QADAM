@@ -93,3 +93,25 @@ dropped, because Expo rate-limits senders that keep pushing to uninstalled apps.
 supabase functions deploy send-notifications
 # then schedule it a few minutes after queue_expiry_warnings (see supabase/cron.sql)
 ```
+
+## `verify-ad-reward`
+
+AdMob's server-side verification callback. Google calls it once a rewarded video
+is genuinely watched; it verifies the ECDSA signature against Google's published
+keys and then mints.
+
+It replaces a client-callable claim, which was worth 90 coins a day to anyone
+willing to call it three times without watching anything — small per user, and
+exactly the throughput a farm is built for. A forged or unverifiable callback
+pays nothing and says nothing about why, for the same reason the step
+attestation fails closed.
+
+```bash
+supabase functions deploy verify-ad-reward --no-verify-jwt
+```
+
+`--no-verify-jwt` because Google calls it, not a signed-in user. The signature
+check is what authenticates the request.
+
+Then in the AdMob console, set the rewarded ad unit's SSV URL to this function
+and pass the user's id as `user_id` in the ad request's custom data.

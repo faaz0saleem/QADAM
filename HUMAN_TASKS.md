@@ -70,6 +70,16 @@ Finished items move to [Done](#done) rather than being deleted.
       shopping flow, and the code should have no unit ID that could land there.
       Needs an AdSense-linked payment profile before it pays out.
 
+- [ ] **P2 · SECURITY** — Set the AdMob server-side verification URL
+      Why: coins are minted only by Google's SSV callback, never by the app. Until
+      the SSV URL is set, watching a video mints nothing — which is the safe
+      failure, and is deliberate: a client-callable claim was worth 90 coins a day
+      to anyone willing to call it three times without watching anything.
+      How: AdMob → the rewarded ad unit → Server-side verification → set the URL
+      to `https://<ref>.supabase.co/functions/v1/verify-ad-reward`. In the app,
+      pass the signed-in user's id as `user_id` in the ad request's custom data,
+      or the callback has nobody to pay.
+
 - [ ] **P2** — WhatsApp Business API access (or Twilio as the fallback)
       Why: §7.5's pre-dispatch confirmation is the single cheapest lever on the
       18–20% RTO rate. The database already refuses to dispatch an unconfirmed COD

@@ -99,22 +99,39 @@ function RewardedVideo() {
   const { t, fill } = useI18n();
   const { refresh } = useAppState();
   const [busy, setBusy] = useState(false);
+  const [left, setLeft] = useState<number | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    api.rewardedAdsLeftToday().then((n) => { if (alive) setLeft(n); }).catch(() => {});
+    return () => { alive = false; };
+  }, []);
 
   async function watch() {
     setBusy(true);
     setMessage(null);
     try {
-      // The AdMob rewarded unit goes here; the reward is only claimed once the
-      // SDK reports the video actually completed.
-      const coins = await api.claimRewardedAd();
-      setMessage(fill(t.you.watchVideo, { coins: formatCoins(coins) }));
+      // The AdMob rewarded unit is shown here. The app does NOT claim the
+      // reward afterwards — Google's server-side verification callback does, so
+      // that a coin can only be minted behind an ad that was actually watched.
+      // The balance updates when that callback lands.
+      await new Promise((resolve) => setTimeout(resolve, 0));
       await refresh();
+      setLeft((n) => (n === null ? null : Math.max(0, n - 1)));
     } catch (e) {
       setMessage(e instanceof Error ? e.message : t.common.retry);
     } finally {
       setBusy(false);
     }
+  }
+
+  if (left === 0) {
+    return (
+      <Text style={[text.bodySmall, { color: theme.textMuted, marginTop: space.xxl }]}>
+        {fill(t.you.videoLimit, { limit: 3 })}
+      </Text>
+    );
   }
 
   return (

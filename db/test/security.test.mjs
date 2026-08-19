@@ -128,12 +128,32 @@ describe('§13.2 the client cannot write to the coin economy', () => {
       const user = await makeUser(c);
       const coins = await asUser(c, user, async () => {
         const { rows } = await c.query(
-          `select submit_steps(pkt_date() - 1, 3000, 'health_connect', true) as coins`);
+          `select submit_steps(pkt_date() - 1, 3000, 'health_connect') as coins`);
         return rows[0].coins;
       });
-      assert.equal(coins, 30);
+
+      // Zero, not thirty. A client-reported figure is recorded and credited
+      // nothing; minting happens only behind a verified attestation token.
+      assert.equal(coins, 0);
       const { rows } = await c.query('select user_id from daily_steps');
-      assert.deepEqual(rows.map((r) => r.user_id), [user]);
+      assert.deepEqual(rows.map((r) => r.user_id), [user], 'and only for themselves');
+    });
+  });
+
+  test('a client cannot claim attestation, whatever it passes', async () => {
+    await withRollback(async (c) => {
+      const user = await makeUser(c);
+      await asUser(c, user, async () => {
+        // The four-argument overload was the bypass: any signed-in user could
+        // pass true and mint a full day's coins without an ad, a device check,
+        // or a step ever being taken. It no longer exists.
+        await expectRejected(c, () =>
+          c.query(`select submit_steps(pkt_date() - 1, 15000, 'health_connect', true)`),
+          /does not exist|function submit_steps/i);
+      });
+      assert.equal(
+        (await c.query('select coin_balance($1) as b', [user])).rows[0].b, 0,
+      );
     });
   });
 });

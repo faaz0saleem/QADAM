@@ -238,10 +238,18 @@ export async function quoteCoins(
   return { coins: balance, discountPkr };
 }
 
-/** §7.8 — the reward is minted server-side; this never sends an amount. */
-export async function claimRewardedAd(): Promise<number> {
-  if (usingDemoData) throw new Error('No Supabase project is configured yet.');
-  return rpc<number>('claim_rewarded_ad', {});
+/**
+ * §7.8 — how many rewarded videos are left today.
+ *
+ * There is deliberately no `claimRewardedAd`. The coins are minted by AdMob's
+ * server-side verification callback, which Google sends to the verify-ad-reward
+ * Edge Function once a video is genuinely watched. A client-callable claim was
+ * worth 90 coins a day to anyone willing to call it three times without
+ * watching anything.
+ */
+export async function rewardedAdsLeftToday(): Promise<number> {
+  if (usingDemoData) return 3;
+  return rpc<number>('rewarded_ads_left_today', {});
 }
 
 export async function createTeam(name: string, city?: string): Promise<{ teamId: string; inviteCode: string }> {

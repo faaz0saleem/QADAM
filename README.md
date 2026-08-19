@@ -124,7 +124,7 @@ app with the §9 design system across five tabs, bilingual EN/UR.
 the WhatsApp confirmation sender, and the client-side integrity provider. The
 last one means nothing mints on a hosted project yet — see `HUMAN_TASKS.md`.
 
-185 tests pass and the typecheck is clean:
+191 tests pass and the typecheck is clean:
 
 ```bash
 npm run check

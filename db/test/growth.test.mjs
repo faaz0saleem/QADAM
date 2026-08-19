@@ -84,28 +84,57 @@ describe('§7.6 teams', () => {
 });
 
 describe('§7.8 rewarded video', () => {
-  test('mints the configured coins and caps the day', async () => {
+  test('a verified AdMob callback mints the configured coins and caps the day', async () => {
     await withRollback(async (c) => {
       const user = await makeUser(c);
-      await asUser(c, user, async () => {
-        for (let i = 0; i < 3; i += 1) {
-          const { rows } = await c.query('select claim_rewarded_ad() as coins');
-          assert.equal(rows[0].coins, 30);
-        }
-        await expectRejected(c, () => c.query('select claim_rewarded_ad()'), /all 3 videos today/);
-      });
-      assert.equal(await balance(c, user), 90, 'never more than the daily limit');
+      for (let i = 0; i < 3; i += 1) {
+        const { rows } = await c.query(
+          `select grant_verified_ad_reward($1, $2) as coins`, [user, `txn-${i}`]);
+        assert.equal(rows[0].coins, 30);
+      }
+      const { rows: over } = await c.query(
+        `select grant_verified_ad_reward($1, 'txn-4') as coins`, [user]);
+      assert.equal(over[0].coins, 0, 'the fourth video of the day pays nothing');
+      assert.equal(await balance(c, user), 90);
     });
   });
 
-  test('the client cannot name its own reward', async () => {
+  test('a replayed callback pays once — AdMob retries', async () => {
     await withRollback(async (c) => {
+      const user = await makeUser(c);
+      await c.query(`select grant_verified_ad_reward($1, 'same-txn')`, [user]);
       const { rows } = await c.query(
-        `select pg_get_function_arguments(p.oid) as args from pg_proc p
-         join pg_namespace n on n.oid = p.pronamespace
-         where n.nspname = 'public' and p.proname = 'claim_rewarded_ad'`,
-      );
-      assert.equal(rows[0].args, '', 'it takes no arguments at all, by design');
+        `select grant_verified_ad_reward($1, 'same-txn') as coins`, [user]);
+      assert.equal(rows[0].coins, 0);
+      assert.equal(await balance(c, user), 30);
+    });
+  });
+
+  test('there is no client-callable way to claim a reward', async () => {
+    await withRollback(async (c) => {
+      // The old claim_rewarded_ad() let any signed-in user mint 90 coins a day
+      // without an ad ever being shown. It is gone; only the SSV callback path
+      // remains, and that runs as service_role.
+      const { rows } = await c.query(
+        `select p.proname from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+         where n.nspname = 'public' and p.proname = 'claim_rewarded_ad'`);
+      assert.deepEqual(rows, []);
+
+      const user = await makeUser(c);
+      await asUser(c, user, () =>
+        expectRejected(c, () =>
+          c.query(`select grant_verified_ad_reward($1, 'forged')`, [user]),
+          /permission denied/));
+    });
+  });
+
+  test('a client can still ask how many are left today', async () => {
+    await withRollback(async (c) => {
+      const user = await makeUser(c);
+      await asUser(c, user, async () => {
+        const { rows } = await c.query('select rewarded_ads_left_today() as n');
+        assert.equal(rows[0].n, 3);
+      });
     });
   });
 
