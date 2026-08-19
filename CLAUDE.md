@@ -64,10 +64,23 @@ HUMAN_TASKS.md             what the human must do (README §11) — keep it curr
 supabase/
   migrations/              numbered, forward-only. Never edit an applied migration.
   tests/                   pgTAP. `_bootstrap.sql` shims Supabase-isms locally.
+  functions/               Deno Edge Functions. See functions/README.md.
 scripts/
   db.sh                    start/stop/reset a local Postgres 16 test cluster
   test.sh                  reset → migrate → run every pgTAP test file
+.github/workflows/ci.yml   pgTAP suite + Deno typecheck, on every push
 ```
+
+## Two rules about the schema boundary
+
+- **PostgREST only sees `public`.** `private` is absent from `config.toml`, which is
+  what keeps `COIN_VALUE_PKR` off every device. So an Edge Function cannot call
+  `private.*` over RPC — and the fix is never to expose the schema. Add a thin
+  `security definer` wrapper in `public`, granted to `service_role` alone
+  (`20260819011100_service_rpc_surface.sql` is the pattern).
+- **Postgres grants EXECUTE on every new function to `PUBLIC`.** Revoking from
+  `anon` and `authenticated` does nothing on its own — they inherit it. Every new
+  function needs `revoke all on function ... from public` or it is world-callable.
 
 ## Running the database tests
 

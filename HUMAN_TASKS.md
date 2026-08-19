@@ -54,8 +54,14 @@ deleted, so you can see what has already been handled.
       it to the Play Console app → put the project number in
       `GOOGLE_PLAY_INTEGRITY_PROJECT_NUMBER`.
 
-- [ ] **P1** — Apple App Attest / DeviceCheck key
-      Why: the iOS half of the same control.
+- [ ] **P1 · BLOCKING for iOS earning** — Apple App Attest / DeviceCheck key
+      Why: the iOS half of the same control, and right now **iOS submissions earn
+      zero coins** because App Attest verification is not implemented. That is the
+      correct failure direction — attestation fails closed rather than waving
+      submissions through — but it does mean iOS cannot ship until it is finished,
+      and finishing it needs the team id and bundle id from this step.
+      The remaining work is mine, not yours; `supabase/functions/_shared/attest.ts`
+      lists the five steps. Android is complete and verified against Play Integrity.
       How: developer.apple.com → Certificates, Identifiers & Profiles → Keys → new key
       with DeviceCheck enabled. Download the `.p8` once — Apple will not show it again.
 
@@ -72,6 +78,22 @@ deleted, so you can see what has already been handled.
       Must say: we read step count and distance from Health Connect / HealthKit; we
       never sell or share health data; we never use it for advertising; coins have no
       cash value and cannot be transferred or withdrawn.
+
+- [ ] **P1** — Two database settings, once the project and functions exist
+      Why: pg_cron reaches the notification Edge Functions through `private.notify()`,
+      which needs to know where they live. Without these the coin-expiry push — §4's
+      single best reactivation lever — silently never fires.
+      How: in the Supabase SQL editor, once you have the project ref and service key:
+      ```sql
+      alter database postgres set app.functions_base_url = 'https://<ref>.supabase.co/functions/v1';
+      alter database postgres set app.service_role_key   = '<service role key>';
+      ```
+
+- [ ] **P2** — Point AdMob's server-side verification at the callback
+      Why: rewarded video only pays out through a signature Google signs. Until the
+      SSV URL is set, watching an ad credits nothing.
+      How: AdMob → the rewarded ad unit → Server-side verification →
+      `https://<ref>.supabase.co/functions/v1/admob-ssv`.
 
 - [ ] **P2** — Domain, for the privacy policy, deep links and the eventual site.
 
@@ -183,3 +205,10 @@ These were needed to keep moving. None of them touch §0.
 - [x] Append-only coin ledger with exact expiry, and no balance column anywhere.
 - [x] Step ingestion with the full §6.1 anti-fraud set, including §12's rooted-emulator case.
 - [x] RLS on every table, `cost_pkr` and `app_config` unreachable from any client role.
+- [x] Rewarded video (3/day, server-counted, replay-proof) and referrals paid on the
+      referee's first *delivered* order.
+- [x] Edge Functions: nonce-bound attestation, step ingestion, AdMob SSV signature
+      verification, and the two push jobs. Android attestation is complete; iOS is not
+      (see above).
+- [x] CI on every push: the full pgTAP suite against a real PostgreSQL 16, plus a Deno
+      typecheck and lint of the Edge Functions.
