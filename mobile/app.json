@@ -1,0 +1,65 @@
+{
+  "expo": {
+    "name": "Qadam",
+    "slug": "qadam",
+    "scheme": "qadam",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "splash": {
+      "backgroundColor": "#101828",
+      "resizeMode": "contain",
+      "image": "./assets/splash-icon.png"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.qadam.app",
+      "infoPlist": {
+        "NSHealthShareUsageDescription": "Qadam reads your step count so it can mint coins for the walking you already do. Your health data is never shared and is never used for advertising.",
+        "NSHealthUpdateUsageDescription": "Qadam does not write anything to Health.",
+        "CFBundleAllowMixedLocalizations": true
+      },
+      "entitlements": {
+        "com.apple.developer.devicecheck.appattest-environment": "production"
+      }
+    },
+    "android": {
+      "package": "com.qadam.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#101828",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.health.READ_STEPS",
+        "android.permission.ACTIVITY_RECOGNITION",
+        "android.permission.POST_NOTIFICATIONS"
+      ],
+      "blockedPermissions": [
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-localization",
+      "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "color": "#C8952E"
+        }
+      ]
+    ],
+    "extra": {
+      "router": {
+        "origin": false
+      }
+    }
+  }
+}

@@ -1,0 +1,87 @@
+name: ci
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  database:
+    name: pgTAP — §0 and the rest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install PostgreSQL 16 and pgTAP
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends postgresql-16 postgresql-16-pgtap
+          # The runner image starts a cluster on 5432; ours lives on 5433 in the
+          # workspace, so they do not collide.
+          echo "/usr/lib/postgresql/16/bin" >> "$GITHUB_PATH"
+
+      - name: Apply every migration to a scratch database and run the suite
+        run: ./scripts/test.sh
+
+      # pgTAP runs in one transaction, which is the wrong shape for testing what
+      # two phones syncing at once do to one wallet. These open real sessions.
+      - name: Concurrency checks
+        run: ./scripts/test-concurrency.sh
+
+      - name: Stop the cluster
+        if: always()
+        run: ./scripts/db.sh stop || true
+
+  functions:
+    name: Edge Functions typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Installed from npm rather than via a marketplace action, so this workflow
+      # depends on nothing outside actions/checkout.
+      - name: Install Deno
+        run: |
+          npm install -g deno
+          deno --version
+
+      - name: Typecheck
+        run: |
+          shopt -s nullglob
+          for f in supabase/functions/*/index.ts; do
+            echo "── $f"
+            deno check "$f"
+          done
+
+      - name: Unit tests
+        run: deno test supabase/functions/_shared/
+
+      - name: Lint
+        run: deno lint supabase/functions
+
+  app:
+    name: App typecheck and §9 design rules
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install app dependencies
+        working-directory: mobile
+        run: npm ci
+
+      - name: Typecheck
+        working-directory: mobile
+        run: npx tsc --noEmit
+
+      - name: Unit tests
+        working-directory: mobile
+        run: npx jest --ci
+
+      # §9.2 brass is coin-only, §9.6 forbidden words, §2 no location APIs.
+      # Enforced the same way §0 is: mechanically, not by remembering.
+      - name: Design rules
+        run: python3 scripts/check-design.py

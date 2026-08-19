@@ -1,0 +1,44 @@
+# Supabase local/project configuration.
+project_id = "qadam"
+
+[api]
+enabled = true
+port = 54321
+# PostgREST exposes ONLY these schemas. `private` is deliberately absent: the coin
+# conversion rate, cost prices and fraud thresholds live there and must never be
+# reachable from a client, whatever RLS says.
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 200
+
+[db]
+port = 54322
+major_version = 16
+
+[db.pooler]
+enabled = true
+
+[auth]
+enabled = true
+site_url = "qadam://"
+additional_redirect_urls = ["qadam://auth/callback"]
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+# Phone OTP is the primary identity in this market. Email is not offered.
+enable_signup = true
+
+[auth.email]
+enable_signup = false
+enable_confirmations = false
+
+[auth.sms]
+enable_signup = true
+enable_confirmations = true
+# §7.5 — phone OTP on first order. Provider configured from env, never committed.
+
+[storage]
+enabled = true
+file_size_limit = "10MiB"
+
+[analytics]
+enabled = false

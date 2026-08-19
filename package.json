@@ -1,0 +1,24 @@
+{
+  "name": "qadam",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Walk, mint coins, spend them as a margin-capped discount. Pakistan.",
+  "scripts": {
+    "db:start": "./scripts/db.sh start",
+    "db:stop": "./scripts/db.sh stop",
+    "db:reset": "./scripts/db.sh reset",
+    "db:psql": "./scripts/db.sh psql",
+    "test": "./scripts/test.sh",
+    "test:db": "./scripts/test.sh",
+    "check:design": "python3 scripts/check-design.py",
+    "app:typecheck": "npm --prefix mobile run typecheck",
+    "app:start": "npm --prefix mobile run start",
+    "app:test": "npm --prefix mobile test",
+    "check": "./scripts/test.sh && ./scripts/test-concurrency.sh && deno test supabase/functions/_shared/ && npm --prefix mobile run typecheck && npm --prefix mobile test && python3 scripts/check-design.py",
+    "test:concurrency": "./scripts/test-concurrency.sh",
+    "functions:test": "deno test supabase/functions/_shared/"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

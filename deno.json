@@ -1,0 +1,23 @@
+{
+  "lint": {
+    "include": [
+      "supabase/functions"
+    ],
+    "rules": {
+      "tags": [
+        "recommended"
+      ]
+    }
+  },
+  "fmt": {
+    "include": [
+      "supabase/functions"
+    ],
+    "lineWidth": 100,
+    "singleQuote": true
+  },
+  "imports": {
+    "@supabase/supabase-js": "npm:@supabase/supabase-js@2"
+  },
+  "nodeModulesDir": "auto"
+}
