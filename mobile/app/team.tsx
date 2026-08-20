@@ -11,7 +11,8 @@ import { TeamShareCard } from '@/components/TeamShareCard';
 import { earning, space } from '@/theme';
 import { useI18n, fill } from '@/i18n';
 import { supabase } from '@/lib/supabase';
-import { formatNumber } from '@/lib/format';
+import { formatNumber, formatPkr, relativeTime } from '@/lib/format';
+import { useGroupOrders, type GroupOrder } from '@/hooks/useGroupOrder';
 
 interface Team {
   team_id: string;
@@ -100,18 +101,73 @@ export default function TeamScreen() {
       ) : null}
 
       {team ? (
-        <TeamRoster
-          team={team}
-          roster={roster}
-          standing={standing}
-          onChange={load}
-          onLeft={() => router.back()}
-        />
+        <>
+          <OpenBaskets />
+          <TeamRoster
+            team={team}
+            roster={roster}
+            standing={standing}
+            onChange={load}
+            onLeft={() => router.back()}
+          />
+        </>
       ) : (
         <NoTeam initialCode={incomingCode ?? ''} onJoined={load} />
       )}
     </Screen>
   );
+}
+
+/**
+ * Baskets the team has open, at the top of the team screen because a basket
+ * waiting on your answer is the most time-limited thing on it — it expires,
+ * and until it does, four other people are waiting.
+ *
+ * Only open ones. A placed basket is an order now, and it lives on the orders
+ * screen with every other order rather than being a second class of thing.
+ */
+function OpenBaskets() {
+  const { t, locale } = useI18n();
+  const router = useRouter();
+  const { orders } = useGroupOrders();
+  const open = orders.filter((o) => o.status === 'open');
+
+  if (open.length === 0) return null;
+
+  return (
+    <>
+      {open.map((basket) => (
+        <Pressable
+          key={basket.id}
+          accessibilityRole="button"
+          accessibilityLabel={`${t.group.title}: ${formatPkr(basket.subtotal_pkr, locale)}`}
+          onPress={() => router.push(`/group/${basket.id}`)}
+        >
+          <Card style={styles.basket}>
+            <Row justify="space-between">
+              <Text variant="sectionTitle">{t.group.title}</Text>
+              <Text variant="data">{formatPkr(basket.subtotal_pkr, locale)}</Text>
+            </Row>
+            <Text variant="bodySmall" dim>
+              {waitingLine(basket, t)}
+            </Text>
+            <Text variant="label" faint>
+              {fill(t.group.expires, { when: relativeTime(basket.expires_at, locale) })}
+            </Text>
+          </Card>
+        </Pressable>
+      ))}
+    </>
+  );
+}
+
+function waitingLine(basket: GroupOrder, t: ReturnType<typeof useI18n>['t']): string {
+  const me = basket.members.find((m) => m.is_me);
+  // "Waiting on you" is the only version of this line that is an instruction
+  // rather than a status, so it wins whenever it is true.
+  if (me?.decision === 'waiting') return t.group.open;
+  if (basket.waiting_on === 1) return t.group.waitingOnOne;
+  return fill(t.group.waitingOn, { count: formatNumber(basket.waiting_on) });
 }
 
 function NoTeam({ initialCode, onJoined }: { initialCode: string; onJoined: () => void }) {
@@ -317,6 +373,7 @@ function TeamRoster({
 }
 
 const styles = StyleSheet.create({
+  basket: { borderLeftWidth: 2, borderLeftColor: earning.good },
   stack: { gap: space.lg },
   code: { textAlign: 'center', letterSpacing: 8, fontSize: 24 },
   member: { paddingVertical: space.sm, borderBottomWidth: 0, borderBottomColor: earning.rule },

@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Image, StyleSheet, View } from 'react-native';
+import { Image, Linking, StyleSheet, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { Screen } from '@/components/Screen';
 import { Button } from '@/components/Button';
-import { Card, Row, Text } from '@/components/ui';
-import { Loading, Notice } from '@/components/Notice';
+import { Card, Row, Skeleton, Text } from '@/components/ui';
+import { Notice } from '@/components/Notice';
 import { radius, space, useSurface } from '@/theme';
 import { useI18n, fill } from '@/i18n';
 import { supabase } from '@/lib/supabase';
@@ -15,11 +15,17 @@ import { formatNumber, formatPkr } from '@/lib/format';
 interface Product {
   id: string;
   title: string;
+  description: string | null;
   brand_name: string | null;
+  category_name: string | null;
   price_pkr: number;
   stock: number;
   images: string[];
+  attributes: Record<string, string>;
   my_discount_pkr: number;
+  /** §8.3 — a licensed listing we link out to. Never sold here, never in a basket. */
+  is_affiliate: boolean;
+  affiliate_url: string | null;
 }
 
 export default function ProductScreen() {
@@ -35,9 +41,10 @@ export default function ProductScreen() {
   useEffect(() => {
     void (async () => {
       await loadCart();
-      const { data } = await supabase.rpc('store_feed', { p_limit: 60 });
-      const found = ((data ?? []) as Product[]).find((p) => p.id === id) ?? null;
-      setProduct(found);
+      // One product by id. This used to pull the first 60 rows of the feed and
+      // search them, which quietly stopped finding anything at the 61st SKU.
+      const { data } = await supabase.rpc('product_detail', { p_id: id });
+      setProduct(((data ?? []) as Product[])[0] ?? null);
       setLoading(false);
     })();
   }, [id]);
@@ -45,7 +52,9 @@ export default function ProductScreen() {
   if (loading) {
     return (
       <Screen title="" surface="spending">
-        <Loading />
+        <Skeleton height={0} style={styles.photo} />
+        <Skeleton width="70%" height={26} />
+        <Skeleton width="35%" height={20} />
       </Screen>
     );
   }
@@ -70,13 +79,47 @@ export default function ProductScreen() {
       <Text variant="screenTitle">{product.title}</Text>
       <Text variant="dataLarge">{formatPkr(product.price_pkr)}</Text>
 
+      {product.description ? (
+        <Text variant="body" dim>
+          {product.description}
+        </Text>
+      ) : null}
+
+      {Object.entries(product.attributes ?? {}).length > 0 ? (
+        <Card>
+          {Object.entries(product.attributes).map(([key, value]) => (
+            <Row key={key} justify="space-between">
+              <Text variant="bodySmall" dim>
+                {key}
+              </Text>
+              <Text variant="bodySmall">{String(value)}</Text>
+            </Row>
+          ))}
+        </Card>
+      ) : null}
+
       {/*
         §7.4 — "'Save PKR 180 with your coins' beats 'up to 10% off' every time."
         And §7.4 again: low-margin goods stay in the catalogue with a ~1% cap and
         NO apologetic copy. If the saving is small, it is shown small and plainly,
         with nothing explaining why.
       */}
-      {product.my_discount_pkr > 0 ? (
+      {/*
+        §8 — an affiliate listing is somebody else's parcel. The database refuses
+        to put one on an order line; this is the same refusal said before anyone
+        gets as far as a basket, with the link they actually wanted.
+      */}
+      {product.is_affiliate ? (
+        <>
+          <Notice tone="quiet" message={t.shop.partnerNote} />
+          <Button
+            label={t.shop.viewAtPartner}
+            onPress={() =>
+              product.affiliate_url ? void Linking.openURL(product.affiliate_url) : undefined
+            }
+          />
+        </>
+      ) : product.my_discount_pkr > 0 ? (
         <Card>
           <Text variant="sectionTitle" style={{ color: surface.good }}>
             {fill(t.shop.saveWithCoins, { amount: formatNumber(product.my_discount_pkr) })}
@@ -94,7 +137,7 @@ export default function ProductScreen() {
         </Text>
       )}
 
-      {soldOut ? (
+      {product.is_affiliate ? null : soldOut ? (
         <Notice message={t.shop.outOfStock} />
       ) : (
         <>
@@ -125,6 +168,6 @@ export default function ProductScreen() {
 }
 
 const styles = StyleSheet.create({
-  photo: { aspectRatio: 1, borderRadius: radius.lg, overflow: 'hidden' },
+  photo: { aspectRatio: 1, width: '100%', height: undefined, borderRadius: radius.lg, overflow: 'hidden' },
   image: { width: '100%', height: '100%' },
 });

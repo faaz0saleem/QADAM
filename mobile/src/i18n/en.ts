@@ -165,6 +165,14 @@ export const en = {
     viewCart: 'Basket',
     cartTitle: 'Basket',
     cartEmpty: 'Nothing in your basket yet.',
+    allCategories: 'Everything',
+    sortNew: 'Newest',
+    sortPriceLow: 'Price ↑',
+    sortPriceHigh: 'Price ↓',
+    sortSaving: 'Best saving',
+    loadMore: 'Show more',
+    viewAtPartner: 'View at partner',
+    partnerNote: 'Sold by a partner. Coins are not spent here.',
     subtotal: 'Subtotal',
     coinDiscount: 'Coin discount',
     delivery: 'Delivery',
@@ -196,6 +204,48 @@ export const en = {
     errorPlace: 'We could not place that order. Your basket is unchanged.',
   },
 
+  /**
+   * A basket a team buys together (§7.6, and the co-payment shape README §13.3
+   * requires — see the group_orders migration).
+   *
+   * §9.6: never "pool", never "share your coins". Nobody's coins move. The word
+   * that is true is "together": everyone approves, and everyone who has coins
+   * puts their own in.
+   */
+  group: {
+    title: 'Team basket',
+    start: 'Buy this with your team',
+    startHint: 'Everyone on your team has to agree before it is ordered',
+    open: 'Waiting for your team',
+    waitingOn: 'Waiting on {{count}}',
+    waitingOnOne: 'Waiting on 1 person',
+    everyoneAgreed: 'Everyone agreed. It is ordered.',
+    approve: 'Agree',
+    approveWithoutCoins: 'Agree, but keep my coins',
+    decline: 'Say no',
+    cancel: 'Call it off',
+    declined: '{{name}} said no, so nothing was ordered',
+    cancelled: 'Called off',
+    expired: 'This basket expired',
+    placed: 'Ordered',
+    youOpened: 'You started this',
+    openedBy: '{{name}} started this',
+    deliverTo: 'Going to {{name}}',
+    saving: 'Save {{amount}} with your team',
+    savingCapped: 'Up to {{amount}} off this basket',
+    committed: '{{amount}} covered so far',
+    myCoins: 'You put in',
+    statusWaiting: 'not decided yet',
+    statusApproved: 'agreed',
+    statusApprovedNoCoins: 'agreed, no coins',
+    statusDeclined: 'said no',
+    expires: 'Expires {{when}}',
+    noTeam: 'Join a team first — a basket needs someone to agree to it.',
+    alreadyOpen: 'Your team already has a basket waiting.',
+    empty: 'No team baskets yet. Put something in your basket and ask your team.',
+    coinsExplainer:
+      'Everyone who agrees spends their own coins on this. Coins never move between people.',
+  },
   team: {
     title: 'Team',
     createTitle: 'Start a team',

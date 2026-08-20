@@ -12,6 +12,8 @@ import { useI18n, fill } from '@/i18n';
 import { supabase } from '@/lib/supabase';
 import { clearCart, loadCart, setQty, useCart } from '@/lib/cart';
 import { refreshWallet } from '@/hooks/useWallet';
+import { openGroupOrder } from '@/hooks/useGroupOrder';
+import { useTeam } from '@/hooks/useTeam';
 import { formatNumber, formatPkr } from '@/lib/format';
 
 /**
@@ -33,6 +35,7 @@ export default function CartScreen() {
   const [useCoins, setUseCoins] = useState(true);
   const [placing, setPlacing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const team = useTeam();
 
   useEffect(() => {
     void loadCart();
@@ -67,6 +70,32 @@ export default function CartScreen() {
       discount > 0 ? `${t.shop.placedBody}\n\n${t.shop.burnWarning}` : t.shop.placedBody,
     );
     router.replace('/orders');
+  };
+
+  /**
+   * §7.6, and the co-payment shape §13.3 requires: the same basket, but every
+   * other member of your team has to agree to it, and everyone who agrees pays
+   * for it out of their own coins.
+   *
+   * The basket is NOT cleared here. Nothing has been ordered yet — the team has
+   * to say yes first — and emptying someone's basket on the strength of a
+   * question they have not had answered is how you lose the sale twice.
+   */
+  const askTheTeam = async () => {
+    setPlacing(true);
+    setError(null);
+    const { order, error: rpcError } = await openGroupOrder(
+      cart.lines.map((l) => ({ product_id: l.productId, qty: l.qty })),
+      address.trim(),
+      phone.trim(),
+    );
+    setPlacing(false);
+
+    if (rpcError || !order) {
+      setError(rpcError ?? t.errors.generic);
+      return;
+    }
+    router.push(`/group/${order.id}`);
   };
 
   if (cart.ready && cart.lines.length === 0) {
@@ -181,10 +210,32 @@ export default function CartScreen() {
         loading={placing}
         disabled={address.trim().length < 8 || phone.trim().length < 10}
       />
+
+      {/*
+        Only offered to someone who has a team with somebody else in it. A
+        button that always fails with "you are not in a team" is worse than no
+        button — §9.6, errors say what happened and what to do, and the best
+        version of that is not asking a question with only one answer.
+      */}
+      {team.team && team.roster.length > 1 ? (
+        <View style={styles.together}>
+          <Button
+            variant="quiet"
+            label={t.group.start}
+            onPress={() => void askTheTeam()}
+            loading={placing}
+            disabled={address.trim().length < 10 || phone.trim().length < 10}
+          />
+          <Text variant="label" faint>
+            {t.group.startHint}
+          </Text>
+        </View>
+      ) : null}
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   lineText: { flexShrink: 1, gap: 2, paddingEnd: space.md },
+  together: { gap: space.xs },
 });

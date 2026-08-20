@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { Linking, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { useRouter } from 'expo-router';
 
 import { Screen } from '@/components/Screen';
 import { Card, Row, Text } from '@/components/ui';
@@ -14,6 +15,7 @@ import { useSteps } from '@/hooks/useSteps';
 import { useLiveSteps, useLiveStepTicker } from '@/hooks/useLiveSteps';
 import { openStepPermissionSettings } from '@/lib/health';
 import { useWallet } from '@/hooks/useWallet';
+import { useGroupOrders } from '@/hooks/useGroupOrder';
 import { formatNumber, relativeTime } from '@/lib/format';
 
 const DAILY_CAP = 15000; // display only; the server applies the real cap
@@ -156,7 +158,9 @@ export default function StepsScreen() {
  */
 function usePickOneCard() {
   const { t } = useI18n();
+  const router = useRouter();
   const { batches } = useWallet();
+  const { orders } = useGroupOrders();
 
   return useMemo(() => {
     const lapsing = batches.find((b) => b.days_left <= 14 && b.remaining > 0);
@@ -177,8 +181,38 @@ function usePickOneCard() {
         </Card>
       );
     }
+
+    // Second, and only when nothing is lapsing: a team basket that cannot be
+    // ordered until you answer. It is the same kind of urgency — it expires,
+    // and four people are waiting — but it is somebody else's plan rather than
+    // your own money, which is why it sits below the coins.
+    const waitingOnMe = orders.find(
+      (o) => o.status === 'open' && o.members.some((m) => m.is_me && m.decision === 'waiting'),
+    );
+    if (waitingOnMe) {
+      return (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t.group.open}
+          onPress={() => router.push(`/group/${waitingOnMe.id}`)}
+        >
+          <Card style={styles.waiting}>
+            <Row justify="space-between">
+              <Text variant="sectionTitle">{t.group.open}</Text>
+              <Text variant="data" dim>
+                {formatNumber(waitingOnMe.items.reduce((n, i) => n + i.qty, 0))}
+              </Text>
+            </Row>
+            <Text variant="bodySmall" dim>
+              {fill(t.group.openedBy, { name: waitingOnMe.opened_by_name ?? '' })}
+            </Text>
+          </Card>
+        </Pressable>
+      );
+    }
+
     return null;
-  }, [batches, t]);
+  }, [batches, orders, router, t]);
 }
 
 /**
@@ -229,6 +263,7 @@ const styles = StyleSheet.create({
   coinsBlock: { alignItems: 'baseline' },
   atRisk: { color: earning.bad },
   urgent: { borderLeftWidth: 2, borderLeftColor: earning.bad },
+  waiting: { borderLeftWidth: 2, borderLeftColor: earning.good },
   synced: { paddingTop: space.md },
   cta: {
     minHeight: MIN_TAP_TARGET,
