@@ -1,6 +1,8 @@
-import { StyleSheet, View } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { Animated, Easing, StyleSheet, View } from 'react-native';
 
-import { radius, useSurface } from '@/theme';
+import { motion, radius, useSurface } from '@/theme';
+import { useReduceMotion } from '@/hooks/useReduceMotion';
 
 /**
  * §9.4 — "A horizontal progress rule toward the daily cap (a ruled ledger line
@@ -10,9 +12,14 @@ import { radius, useSurface } from '@/theme';
  * visual language comes from ruled lines and stamped numerals. A ring is a
  * fitness tracker's idiom, and looking like a fitness tracker is how this app
  * ends up compared to one.
+ *
+ * The fill GROWS to its new value rather than appearing at it. On the home
+ * screen this line is redrawn every three seconds against a live step count,
+ * and a bar that teleports two pixels every three seconds reads as a rendering
+ * fault rather than as progress. §9.5's quiet 180ms is exactly the budget.
  */
 interface LedgerRuleProps {
-  /** 0–1. Values above 1 are clamped; the cap is a cap. */
+  /** 0-1. Values above 1 are clamped; the cap is a cap. */
   progress: number;
   height?: number;
   /** Ticks that mark the ruled divisions of the line. */
@@ -27,7 +34,29 @@ export function LedgerRule({
   filledColor,
 }: LedgerRuleProps) {
   const surface = useSurface();
+  const reduceMotion = useReduceMotion();
   const clamped = Math.max(0, Math.min(1, progress));
+
+  // A percentage width cannot be driven natively, so this runs on the JS thread.
+  // It is a six-pixel bar moving once every few seconds: the native driver would
+  // buy nothing here and would rule out interpolating to a percentage, which is
+  // what lets the rule sit in any column without measuring itself first.
+  const fill = useRef(new Animated.Value(clamped)).current;
+
+  useEffect(() => {
+    if (reduceMotion) {
+      fill.setValue(clamped);
+      return;
+    }
+    const run = Animated.timing(fill, {
+      toValue: clamped,
+      duration: motion.quiet,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    });
+    run.start();
+    return () => run.stop();
+  }, [clamped, reduceMotion, fill]);
 
   return (
     <View
@@ -35,11 +64,14 @@ export function LedgerRule({
       accessibilityRole="progressbar"
       accessibilityValue={{ min: 0, max: 100, now: Math.round(clamped * 100) }}
     >
-      <View
+      <Animated.View
         style={[
           styles.fill,
           {
-            width: `${clamped * 100}%`,
+            width: fill.interpolate({
+              inputRange: [0, 1],
+              outputRange: ['0%', '100%'],
+            }),
             backgroundColor: filledColor ?? surface.ruleFilled,
             borderRadius: radius.sm,
           },

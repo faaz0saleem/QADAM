@@ -44,6 +44,7 @@ export const en = {
   steps: {
     title: 'Today',
     stepsLabel: 'steps today',
+    walking: 'counting now',
     towardCap: '{{current}} of {{cap}} counted today',
     notCountedYet: '{{steps}} still to be counted — they go up on the next sync',
     capReached: "Today's steps are all counted",

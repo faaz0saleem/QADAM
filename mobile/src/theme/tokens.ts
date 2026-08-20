@@ -100,6 +100,16 @@ export const radius = {
 export const motion = {
   quiet: 180,
   mint: 400,
+  /**
+   * §9.1 — "the transition between them is the most important moment in the
+   * app: it should feel like stepping indoors."
+   *
+   * Longer than `quiet` on purpose, and the only thing in the app besides the
+   * mint that is allowed to be. Stepping indoors is not a 180ms transition; it
+   * is a room changing and your eyes adjusting, which needs long enough to be
+   * read as a change of place rather than a repaint.
+   */
+  temperature: 240,
 } as const;
 
 /** §9.7 — tap targets ≥44px, unannounced. */

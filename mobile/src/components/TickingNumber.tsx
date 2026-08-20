@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, type TextStyle } from 'react-native';
+import { type TextStyle } from 'react-native';
 
 import { Text } from './ui';
 import { formatNumber } from '@/lib/format';
 import { motion } from '@/theme';
+import { useReduceMotion } from '@/hooks/useReduceMotion';
 
 /**
  * A number that counts up to its new value rather than jumping to it.
@@ -33,24 +34,14 @@ export function TickingNumber({
   const [shown, setShown] = useState(value);
   const from = useRef(value);
   const frame = useRef<ReturnType<typeof setInterval> | null>(null);
-  const reduceMotion = useRef(false);
-
-  useEffect(() => {
-    void AccessibilityInfo.isReduceMotionEnabled().then((on) => {
-      reduceMotion.current = on;
-    });
-    const sub = AccessibilityInfo.addEventListener('reduceMotionChanged', (on) => {
-      reduceMotion.current = on;
-    });
-    return () => sub.remove();
-  }, []);
+  const reduceMotion = useReduceMotion();
 
   useEffect(() => {
     if (value === shown) return;
 
     // §9.5 respects reduced motion by replacing movement with a value change.
     // Down is a snap too: nothing is gained by animating a number backwards.
-    if (reduceMotion.current || value < shown) {
+    if (reduceMotion || value < shown) {
       from.current = value;
       setShown(value);
       return;
@@ -81,7 +72,7 @@ export function TickingNumber({
     // `shown` deliberately absent: including it restarts the animation on every
     // frame it sets, which is an interval that never finishes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value, durationMs]);
+  }, [value, durationMs, reduceMotion]);
 
   return (
     <Text

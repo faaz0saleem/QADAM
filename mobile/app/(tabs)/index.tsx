@@ -6,6 +6,7 @@ import { Card, Row, Text } from '@/components/ui';
 import { MintingCoinValue, CoinValue } from '@/components/Coin';
 import { LedgerRule } from '@/components/LedgerRule';
 import { TickingNumber } from '@/components/TickingNumber';
+import { WalkingPulse } from '@/components/WalkingPulse';
 import { EarnCard } from '@/components/EarnCard';
 import { earning, space, MIN_TAP_TARGET, radius } from '@/theme';
 import { useI18n, fill } from '@/i18n';
@@ -59,9 +60,14 @@ export default function StepsScreen() {
           style={styles.counter}
           accessibilityLabel={`${formatNumber(shownSteps)} ${t.steps.stepsLabel}`}
         />
-        <Text variant="label" dim>
-          {t.steps.stepsLabel}
-        </Text>
+        {/* The dot says the health read is alive. Without it, "you stopped
+            walking" and "the read is failing" are the same still number. */}
+        <Row gap={space.sm}>
+          <WalkingPulse active={live.walking} />
+          <Text variant="label" dim>
+            {live.walking ? `${t.steps.stepsLabel} · ${t.steps.walking}` : t.steps.stepsLabel}
+          </Text>
+        </Row>
       </View>
 
       {/* 2 — the ruled line, filling toward the daily cap */}

@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Animated, StyleSheet, Text, type TextStyle } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { Animated, StyleSheet, Text, type TextStyle } from 'react-native';
 import * as Haptics from 'expo-haptics';
 
 import { COIN_BRASS, motion, text as type } from '@/theme';
+import { useReduceMotion } from '@/hooks/useReduceMotion';
 import { formatNumber } from '@/lib/format';
 import { useI18n } from '@/i18n';
 
@@ -64,13 +65,7 @@ export function CoinValue({ coins, size = 'medium', style, label }: CoinValuePro
 export function MintingCoinValue({ coins, size = 'large', style, label }: CoinValueProps) {
   const previous = useRef(coins);
   const strike = useRef(new Animated.Value(0)).current;
-  const [reduceMotion, setReduceMotion] = useState(false);
-
-  useEffect(() => {
-    AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion);
-    const sub = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduceMotion);
-    return () => sub.remove();
-  }, []);
+  const reduceMotion = useReduceMotion();
 
   useEffect(() => {
     if (coins === previous.current) return;
