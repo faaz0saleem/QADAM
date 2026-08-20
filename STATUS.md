@@ -116,9 +116,14 @@ One basket, one team, everybody says yes.
 
 ## Building it
 
-- ✅ `./scripts/build-apk.sh` — bundles the JS first (Metro finds a broken import in ten seconds; Gradle finds it in eleven minutes), prebuilds, generates a release keystore if there is not one, assembles.
-- ✅ `mobile/eas.json` — the `preview` profile builds an **APK**; `production` builds the `.aab` Play requires.
-- ✅ Verified here: the app bundles to 3.8MB of Hermes bytecode and prebuild generates a clean Android project. The APK itself needs a machine that can reach `dl.google.com` for the Android SDK.
+Three routes, in order of how little you have to install:
+
+- ✅ **`.github/workflows/apk.yml`** — builds it on GitHub's runners, which already carry the Android SDK and NDK, and uploads the `.apk` under Artifacts. Nothing to install anywhere. Blocked only by GitHub Actions being dead on this account (see below).
+- ✅ **`npm run apk`** — EAS Build in the cloud. Needs a free Expo account and one `eas login`.
+- ✅ **`npm run apk:local`** — `scripts/build-apk.sh` on a machine with the Android SDK. Bundles the JS first, because Metro finds a broken import in ten seconds and Gradle finds the same one in eleven minutes.
+- ✅ `mobile/eas.json` — the `preview` profile builds an **APK**; `production` builds the `.aab` Play requires, which cannot be installed by hand.
+- ✅ Verified here: the app bundles to 3.8MB of Hermes bytecode and prebuild generates a clean Android project. The binary itself cannot be produced in the development container — its egress policy returns 403 for `dl.google.com`, so the Android SDK cannot be downloaded.
+- ✅ A build with no Supabase project configured now says so on a designed screen rather than failing at the sign-in form.
 
 ## Infrastructure
 

@@ -28,6 +28,26 @@ deleted, so you can see what has already been handled.
       Until this is sorted, the checks run locally and I run them before every
       commit; nothing has been pushed without them passing.
 
+      **Newer detail, 2026-08-20.** The symptom has sharpened and it points at
+      billing rather than at a permissions toggle. Runs are now created and the
+      jobs report `started_at`, then complete in three to six seconds with
+      `conclusion: failure` — and the log endpoint returns 404, meaning no
+      runner ever attached and there is nothing to log. Every run since
+      2026-08-19 looks identical. That is the shape of a hard stop before
+      scheduling, not a workflow error.
+      Check, in this order: github.com/settings/billing (spending limit,
+      expired card, or Actions minutes exhausted), then Settings → Actions →
+      General for this repo.
+
+      **This now blocks the APK too.** `.github/workflows/apk.yml` builds the
+      Android app on GitHub's runners — which already carry the Android SDK and
+      NDK — and uploads the `.apk` under Artifacts. It is the shortest route
+      from this repository to a file on a phone, and it cannot run until the
+      above is fixed. Two notes when it is: the "Run workflow" button only
+      appears once `apk.yml` is on the **default branch**, so merge it to `main`
+      first; and a tag push (`git tag v0.1.0 && git push --tags`) runs it too,
+      from whatever branch the tag points at.
+
 - [ ] **P1 · BLOCKING** — Create the Supabase project, paste the URL and anon key into `.env.local`
       Why: nothing runs against a real database without it. The schema and its tests
       run locally today (`./scripts/test.sh`, no docker needed), but no app can talk
