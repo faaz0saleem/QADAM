@@ -52,9 +52,34 @@ deleted, so you can see what has already been handled.
       Why: internal testing track, and the Health Connect declaration below.
       How: play.google.com/console → pay → identity verification.
 
-- [ ] **P1 · BLOCKING** — Expo account and an EAS project
+- [ ] **P1 · BLOCKING for an APK you can install** — Expo account and an EAS project
       Why: we need a dev build, not Expo Go — the health libraries are native modules.
-      How: expo.dev → sign up → `eas init` once the app scaffold lands.
+      There is no route to an installable Qadam that skips a real native build.
+      How: expo.dev → sign up, then from the repo:
+
+          npm --prefix mobile install --no-save eas-cli
+          npx --prefix mobile eas login
+          npx --prefix mobile eas init
+          npx --prefix mobile eas build --platform android --profile preview
+
+      `preview` is the profile in `mobile/eas.json` that produces an **APK**. EAS
+      builds it in the cloud and hands back a link a phone can install from.
+      `production` deliberately builds an `.aab` instead, because that is what
+      Play requires — an `.aab` cannot be installed by hand, so do not reach for
+      it when what you want is an APK.
+
+      Building locally instead needs the Android SDK on the machine;
+      `./scripts/build-apk.sh` does the whole thing and prints the exact
+      `sdkmanager` line if it is missing.
+
+- [ ] **P1 · BLOCKING for the release APK** — Back up `mobile/android/app/qadam.keystore`
+      Why: it is the app's identity. `./scripts/build-apk.sh` generates one on the
+      first release build. Lose it and Play will never accept another update to
+      `com.qadam.app` — you would ship a new listing under a new package name and
+      leave every installed user behind. `.gitignore` refuses to commit it, which
+      means nothing is backing it up for you.
+      How: copy it somewhere durable and private, along with the password
+      (`QADAM_KEYSTORE_PASSWORD`, default `qadamqadam` — change it).
 
 ## Needed for Phase 1 (the earning app)
 
@@ -164,10 +189,22 @@ deleted, so you can see what has already been handled.
 
 ## Needed for Phase 3
 
-- [ ] **P2** — AdMob account and rewarded-video ad units for both platforms
+- [ ] **P1 · BLOCKING for any real build** — AdMob **app IDs** for both platforms
+      Why: not the ad unit ids — the *app* id. react-native-google-mobile-ads writes
+      it into the manifest, and the Google Mobile Ads SDK throws on startup without
+      one. `mobile/app.config.ts` currently falls back to Google's published TEST
+      app ids so a build runs and installs; shipping those to the store means zero
+      revenue and, eventually, a policy mail.
+      How: AdMob → your app → App settings → App ID. Then set `ADMOB_ANDROID_APP_ID`
+      and `ADMOB_IOS_APP_ID` in the build environment (EAS: `eas secret:create`).
+
+- [ ] **P2** — AdMob rewarded-video ad units for both platforms
       Why: §7.8. Rewarded video only — if a mediation partner or an AdMob rep suggests
       an interstitial in the shopping flow, the answer is no. One abandoned PKR 2,500
       order wipes out months of ad revenue from that user.
+      How: the unit ids go in `EXPO_PUBLIC_ADMOB_REWARDED_UNIT_ANDROID` / `..._IOS`.
+      Until they are set the app uses Google's test unit, which pays nothing and is
+      what you want during development.
 
 ## Decisions I need from you
 
