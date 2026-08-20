@@ -18,7 +18,20 @@ const anonKey =
   process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ??
   (Constants.expoConfig?.extra?.supabaseAnonKey as string | undefined);
 
-if (!url || !anonKey) {
+/**
+ * Whether this build is pointed at a real backend.
+ *
+ * It matters because an APK built before the Supabase project exists is a
+ * perfectly valid APK — it installs and launches — and then every request goes
+ * to http://localhost and fails with a network error at the sign-in screen.
+ * That looks like a broken app rather than an unconfigured one, and the two
+ * need very different responses from whoever is holding the phone.
+ *
+ * app/_layout.tsx reads this and says so, once, instead.
+ */
+export const isConfigured = Boolean(url && anonKey);
+
+if (!isConfigured) {
   // Loud at startup rather than a confusing 401 on the first request.
   console.error(
     'EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY are not set. ' +

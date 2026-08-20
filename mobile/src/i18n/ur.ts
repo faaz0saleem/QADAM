@@ -283,6 +283,13 @@ export const ur: Copy = {
     errorCode: 'اس کوڈ کا کوئی صارف نہیں۔ دیکھ کر دوبارہ کوشش کریں۔',
   },
 
+  setup: {
+    title: 'بس ایک قدم باقی',
+    body: 'یہ نسخہ ابھی کسی سرور سے منسلک نہیں، اس لیے سائن اِن کرنے کو کچھ نہیں۔',
+    what: 'اسے بنانے کے وقت Supabase پروجیکٹ کا URL اور anon key درکار ہے۔',
+    how: 'EXPO_PUBLIC_SUPABASE_URL اور EXPO_PUBLIC_SUPABASE_ANON_KEY مقرر کریں، پھر دوبارہ بنائیں۔ تفصیل HUMAN_TASKS.md میں ہے۔',
+    note: 'باقی سب کچھ مکمل ہے اور صرف اسی ایک چیز کا منتظر ہے۔',
+  },
   errors: {
     healthOff: 'صحت کی اجازت بند ہے، اس لیے آج کے قدم شمار نہیں ہو رہے۔',
     healthOffCta: 'اسے آن کریں',

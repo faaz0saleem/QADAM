@@ -1,0 +1,197 @@
+name: apk
+
+# Build the Android app and hand back a file you can install.
+#
+# WHY THIS EXISTS
+#
+# Qadam is not an Expo Go app. Health Connect, HealthKit, AdMob and Play
+# Integrity are native modules, so there is no route to an installable build
+# that skips compiling one — and compiling one needs the Android SDK and NDK,
+# which are a gigabyte of downloads from dl.google.com.
+#
+# GitHub's ubuntu runners already have all of it. So this workflow is the
+# shortest path from "the code is on GitHub" to "there is an .apk I can put on
+# a phone", with nothing to install locally.
+#
+# HOW TO RUN IT
+#   Actions tab -> apk -> Run workflow -> pick a branch -> Run.
+#   When it finishes, the APK is under Artifacts at the bottom of the run page.
+#
+# SIGNING
+#   Every Android app has to be signed. With no keystore configured this builds
+#   one on the fly, which installs fine but changes identity every run — so you
+#   cannot install a new build over an old one without uninstalling first. To
+#   fix that permanently, create the four repository secrets named below once;
+#   the job summary explains how.
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: 'release (installable, bundled JS) or debug (needs a Metro server)'
+        type: choice
+        options: [release, debug]
+        default: release
+  push:
+    tags: ['v*']
+
+concurrency:
+  group: apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Android APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      # AGP 8 and Expo SDK 57 both want 17. The runner has several JDKs; pin it
+      # rather than inheriting whichever is default this month.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Install dependencies
+        working-directory: mobile
+        run: npm ci
+
+      # Cheap question first. Metro finds a broken import in ten seconds; Gradle
+      # finds the same one in eleven minutes, after downloading half of Maven.
+      - name: Bundle the JavaScript
+        working-directory: mobile
+        run: |
+          npx expo export --platform android --output-dir dist
+          du -sh dist
+
+      - name: Generate the native project
+        working-directory: mobile
+        env:
+          ADMOB_ANDROID_APP_ID: ${{ secrets.ADMOB_ANDROID_APP_ID }}
+          ADMOB_IOS_APP_ID: ${{ secrets.ADMOB_IOS_APP_ID }}
+        run: npx expo prebuild --platform android --clean
+
+      - name: Signing key
+        id: signing
+        working-directory: mobile/android
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > app/qadam.keystore
+            {
+              echo "storeFile=qadam.keystore"
+              echo "storePassword=$KEYSTORE_PASSWORD"
+              echo "keyAlias=$KEY_ALIAS"
+              echo "keyPassword=$KEY_PASSWORD"
+            } > keystore.properties
+            echo "stable=true" >> "$GITHUB_OUTPUT"
+          else
+            # Throwaway. Installs, but its identity changes every run.
+            keytool -genkeypair -v -storetype PKCS12 \
+              -keystore app/qadam.keystore -alias qadam \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass qadamqadam -keypass qadamqadam \
+              -dname "CN=Qadam, OU=Mobile, O=Qadam, L=Lahore, C=PK"
+            {
+              echo "storeFile=qadam.keystore"
+              echo "storePassword=qadamqadam"
+              echo "keyAlias=qadam"
+              echo "keyPassword=qadamqadam"
+            } > keystore.properties
+            echo "stable=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # prebuild regenerates build.gradle on every run, so this patch is applied
+      # every run rather than committed. Same edit scripts/build-apk.sh makes.
+      - name: Point the release build at that key
+        working-directory: mobile/android
+        run: |
+          python3 - <<'PY'
+          import pathlib, re
+          p = pathlib.Path('app/build.gradle')
+          s = p.read_text()
+          if 'qadamRelease' not in s:
+              s = s.replace('signingConfigs {', '''signingConfigs {
+                  qadamRelease {
+                      def props = new Properties()
+                      def f = rootProject.file('keystore.properties')
+                      if (f.exists()) {
+                          props.load(new FileInputStream(f))
+                          storeFile file(props['storeFile'])
+                          storePassword props['storePassword']
+                          keyAlias props['keyAlias']
+                          keyPassword props['keyPassword']
+                      }
+                  }''', 1)
+              s = re.sub(r'(release \{\n(?:.*\n)*?\s*)signingConfig signingConfigs\.debug',
+                         r'\1signingConfig signingConfigs.qadamRelease', s, count=1)
+              p.write_text(s)
+              print('release now signs with qadam.keystore')
+          PY
+
+      - name: Assemble
+        working-directory: mobile/android
+        run: |
+          PROFILE="${{ inputs.profile || 'release' }}"
+          TASK="assemble$(python3 -c "print('$PROFILE'.capitalize())")"
+          ./gradlew "$TASK" --no-daemon --stacktrace
+
+      - name: Name it
+        id: apk
+        run: |
+          APK="$(find mobile/android/app/build/outputs/apk -name '*.apk' | head -1)"
+          VERSION="$(node -p "require('./mobile/app.json').expo.version")"
+          NAME="qadam-${VERSION}-${GITHUB_SHA::7}.apk"
+          mkdir -p out && cp "$APK" "out/$NAME"
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          echo "size=$(du -h "out/$NAME" | cut -f1)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.apk.outputs.name }}
+          path: out/*.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Summary
+        run: |
+          {
+            echo "## ${{ steps.apk.outputs.name }}"
+            echo
+            echo "**${{ steps.apk.outputs.size }}** — download it from **Artifacts** at the bottom of this page."
+            echo
+            echo "Android will ask about installing from an unknown source once. That is expected for a build that did not come from Play."
+            echo
+            if [ "${{ steps.signing.outputs.stable }}" != "true" ]; then
+              echo "### This build has a throwaway signing key"
+              echo
+              echo "It installs, but its identity changes every run, so the next build will not install over it — you would have to uninstall first. To fix that once and for all, create a keystore locally:"
+              echo
+              echo '```sh'
+              echo 'keytool -genkeypair -v -storetype PKCS12 -keystore qadam.keystore \'
+              echo '  -alias qadam -keyalg RSA -keysize 2048 -validity 10000'
+              echo 'base64 -w0 qadam.keystore   # paste this into the secret below'
+              echo '```'
+              echo
+              echo "Then add four repository secrets under Settings → Secrets and variables → Actions: \`ANDROID_KEYSTORE_BASE64\`, \`ANDROID_KEYSTORE_PASSWORD\`, \`ANDROID_KEY_ALIAS\`, \`ANDROID_KEY_PASSWORD\`. **Back the keystore file up** — it is the app's identity, and losing it means Play will never accept another update to com.qadam.app."
+            fi
+            if [ -z "${{ secrets.ADMOB_ANDROID_APP_ID }}" ]; then
+              echo
+              echo "> Built with Google's **test** AdMob app id, so rewarded video shows test ads and earns nothing. Set the \`ADMOB_ANDROID_APP_ID\` secret to change that."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

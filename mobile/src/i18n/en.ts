@@ -289,6 +289,17 @@ export const en = {
     errorCode: 'Nobody has that code. Check it and try again.',
   },
 
+  /**
+   * The screen a build that has no backend shows instead of a sign-in form it
+   * cannot submit. §9.6 — errors say what happened and what to do.
+   */
+  setup: {
+    title: 'Almost there',
+    body: 'This build is not pointed at a server yet, so there is nothing to sign in to.',
+    what: 'It needs a Supabase project URL and anon key at build time.',
+    how: 'Set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY, then build again. HUMAN_TASKS.md has the steps.',
+    note: 'Everything else in the app is finished and waiting on this one thing.',
+  },
   errors: {
     healthOff: "Health permission is off, so today's steps aren't counting.",
     healthOffCta: 'Turn it on',

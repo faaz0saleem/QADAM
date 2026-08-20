@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { Stack, useRouter, useSegments } from 'expo-router';
@@ -13,9 +13,10 @@ import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold } from '@expo-goog
 import { JetBrainsMono_500Medium, JetBrainsMono_700Bold } from '@expo-google-fonts/jetbrains-mono';
 import { NotoNastaliqUrdu_400Regular } from '@expo-google-fonts/noto-nastaliq-urdu';
 
-import { I18nProvider, loadStoredLocale, type Locale } from '@/i18n';
-import { earning } from '@/theme';
+import { I18nProvider, loadStoredLocale, useI18n, type Locale } from '@/i18n';
+import { earning, space, text as type } from '@/theme';
 import { useSession, useSessionWatcher } from '@/hooks/useSession';
+import { isConfigured } from '@/lib/supabase';
 
 void SplashScreen.preventAutoHideAsync();
 
@@ -45,9 +46,34 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <I18nProvider initial={locale}>
         <StatusBar style="light" />
-        <SessionGate />
+        {/*
+          A build with no backend is a valid APK that installs and launches and
+          then fails at the first request. Say which of those it is, before
+          anyone types a phone number into a form that cannot be submitted.
+        */}
+        {isConfigured ? <SessionGate /> : <NotConfigured />}
       </I18nProvider>
     </SafeAreaProvider>
+  );
+}
+
+/**
+ * §9.6 — "Errors say what happened and what to do."
+ *
+ * Deliberately not a Screen: Screen pins the coin balance to the header, and
+ * there is no balance to pin when there is nothing to ask. Plain type on ink,
+ * saying the one true thing.
+ */
+function NotConfigured() {
+  const { t } = useI18n();
+  return (
+    <View style={styles.setup}>
+      <Text style={styles.setupTitle}>{t.setup.title}</Text>
+      <Text style={styles.setupBody}>{t.setup.body}</Text>
+      <Text style={styles.setupBody}>{t.setup.what}</Text>
+      <Text style={styles.setupMono}>{t.setup.how}</Text>
+      <Text style={styles.setupNote}>{t.setup.note}</Text>
+    </View>
   );
 }
 
@@ -84,5 +110,16 @@ function SessionGate() {
 }
 
 const styles = StyleSheet.create({
+  setup: {
+    flex: 1,
+    backgroundColor: earning.bg,
+    justifyContent: 'center',
+    paddingHorizontal: space.xl,
+    gap: space.lg,
+  },
+  setupTitle: { ...type.screenTitle, color: earning.text },
+  setupBody: { ...type.body, color: earning.textDim },
+  setupMono: { ...type.dataSmall, color: earning.text, lineHeight: 20 },
+  setupNote: { ...type.bodySmall, color: earning.textFaint },
   holding: { flex: 1, backgroundColor: earning.bg },
 });
