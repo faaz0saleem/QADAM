@@ -35,16 +35,18 @@ select is(tests.callable_by('anon', 'private'), null,
 -- to be deliberate enough to edit this line.
 select is(
   tests.callable_by('authenticated', 'public'),
-  'active_challenges, add_friend, apply_referral_code, cancel_my_order, '
-  || 'create_team, current_leaderboard_period, hand_over_captaincy, join_team, '
-  || 'leaderboard, leave_team, max_coin_discount_pkr, my_coin_balance, '
-  || 'my_coin_batches, my_coins_expiring_within, my_discount_on, my_friends, '
+  'active_challenges, add_friend, apply_referral_code, cancel_group_order, '
+  || 'cancel_my_order, create_team, current_leaderboard_period, group_order, '
+  || 'hand_over_captaincy, join_team, leaderboard, leave_team, '
+  || 'max_coin_discount_pkr, my_coin_balance, my_coin_batches, '
+  || 'my_coins_expiring_within, my_discount_on, my_friends, my_group_orders, '
   || 'my_orders, my_rank, my_referral_code, my_referrals, '
   || 'my_rewarded_ads_left_today, my_streak_days, my_team, my_team_standing, '
-  || 'order_coin_state, pkt_date, pkt_day_start, pkt_week_start, '
-  || 'place_order, register_push_token, remove_friend, request_account_deletion, '
-  || 'store_feed, team_roster, team_standings',
-  'the signed-in callable surface is exactly these thirty-five functions');
+  || 'open_group_order, order_coin_state, pkt_date, pkt_day_start, '
+  || 'pkt_week_start, place_order, register_push_token, remove_friend, '
+  || 'request_account_deletion, respond_to_group_order, store_feed, '
+  || 'team_roster, team_standings',
+  'the signed-in callable surface is exactly these forty functions');
 
 -- The earning path is the one that must not be reachable, and it is the one an
 -- attacker would look for first.
@@ -57,7 +59,14 @@ select is(
                         'issue_attestation_nonce', 'consume_attestation_nonce',
                         'rebuild_leaderboards', 'streaks_at_risk',
                         'product_max_discount_pkr', 'can_redeem', 'delete_account',
-                        'set_order_status', 'line_discount_cap')
+                        'set_order_status', 'line_discount_cap',
+                        -- The group-order internals. group_order_funding reads
+                        -- four other people's balances and group_order_discount
+                        -- divides by COIN_VALUE_PKR; either one in a client's
+                        -- hands publishes the rate §4 says is never published.
+                        'place_group_order', 'group_order_funding',
+                        'group_order_discount', 'group_order_cap',
+                        'group_order_members', 'expire_group_orders')
       and (has_function_privilege('authenticated', p.oid, 'EXECUTE')
            or has_function_privilege('anon', p.oid, 'EXECUTE'))),
   null,

@@ -59,6 +59,15 @@ for t in supabase/tests/[0-9]*.sql; do
   [ -n "$FILTER" ] && [[ "$(basename "$t")" != *"$FILTER"* ]] && continue
   files=$((files+1))
   name="$(basename "$t")"
+  # A file that never calls finish() gets its plan checked by nobody: pgTAP only
+  # reports "you planned N but ran M" from there. Silently running four more
+  # assertions than you planned is how an under-planned file looks green.
+  if ! grep -q 'finish()' "$t"; then
+    fail=$((fail+1))
+    printf '   %-58s FAILED\n' "$name"
+    printf '      # no select * from finish(); — the plan in this file is unchecked\n'
+    continue
+  fi
   out="$(psql -X -q --no-psqlrc -t -A --pset pager=off "$TEST_URL" -f "$t" 2>&1)" || true
   bad="$(printf '%s\n' "$out" | grep -c '^not ok' || true)"
   good="$(printf '%s\n' "$out" | grep -c '^ok ' || true)"
