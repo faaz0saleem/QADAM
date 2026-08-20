@@ -44,9 +44,9 @@ select is(
   || 'my_rewarded_ads_left_today, my_streak_days, my_team, my_team_standing, '
   || 'open_group_order, order_coin_state, pkt_date, pkt_day_start, '
   || 'pkt_week_start, place_order, register_push_token, remove_friend, '
-  || 'request_account_deletion, respond_to_group_order, store_feed, '
-  || 'team_roster, team_standings',
-  'the signed-in callable surface is exactly these forty functions');
+  || 'request_account_deletion, respond_to_group_order, store_categories, '
+  || 'store_feed, team_roster, team_standings',
+  'the signed-in callable surface is exactly these forty-one functions');
 
 -- The earning path is the one that must not be reachable, and it is the one an
 -- attacker would look for first.
@@ -66,7 +66,12 @@ select is(
                         -- hands publishes the rate §4 says is never published.
                         'place_group_order', 'group_order_funding',
                         'group_order_discount', 'group_order_cap',
-                        'group_order_members', 'expire_group_orders')
+                        'group_order_members', 'expire_group_orders',
+                        -- The catalogue back office. pricing_report and
+                        -- catalogue_health both read cost_pkr, and
+                        -- outreach_queue is our prospect list.
+                        'import_feed_rows', 'pricing_report', 'outreach_queue',
+                        'catalogue_health', 'order_item_is_fulfillable')
       and (has_function_privilege('authenticated', p.oid, 'EXECUTE')
            or has_function_privilege('anon', p.oid, 'EXECUTE'))),
   null,
