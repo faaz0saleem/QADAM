@@ -77,9 +77,24 @@ export async function refreshWallet(): Promise<void> {
   }
 }
 
+/**
+ * §9.4 pins the coin balance to every screen header, so it must be there on a
+ * cold start too — and a push notification deep-links straight into an order or
+ * a wallet without passing through the tabs layout that would have synced it.
+ * One warm-up per launch; the store is the cache after that.
+ */
+let warmed = false;
+
 export function useWallet() {
   const state = useStore(walletStore);
   const refresh = useCallback(() => refreshWallet(), []);
+
+  useEffect(() => {
+    if (warmed) return;
+    warmed = true;
+    void refreshWallet();
+  }, []);
+
   return { ...state, refresh };
 }
 

@@ -17,15 +17,22 @@ export function formatPkr(pkr: number, _locale: Locale = 'en'): string {
 /** "Synced 4 minutes ago" — failures have to be visible (§7.1). */
 export function relativeTime(iso: string | null, locale: Locale): string {
   if (!iso) return locale === 'ur' ? 'ابھی تک نہیں' : 'never';
-  const seconds = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 1000));
-  if (seconds < 60) return locale === 'ur' ? 'ابھی' : 'just now';
+
+  // Past AND future. This used to clamp at zero, which turned every deadline
+  // into "just now" — a team basket with 34 hours left read as already gone,
+  // and a coin batch expiring on Tuesday read as expiring this second. The
+  // sign is the whole meaning of these strings.
+  const seconds = Math.round((Date.now() - new Date(iso).getTime()) / 1000);
+  const magnitude = Math.abs(seconds);
+  const sign = seconds < 0 ? 1 : -1;
+  if (magnitude < 60) return locale === 'ur' ? 'ابھی' : 'just now';
 
   const rtf = new Intl.RelativeTimeFormat(locale === 'ur' ? 'ur' : 'en', { numeric: 'auto' });
-  const minutes = Math.round(seconds / 60);
-  if (minutes < 60) return rtf.format(-minutes, 'minute');
+  const minutes = Math.round(magnitude / 60);
+  if (minutes < 60) return rtf.format(sign * minutes, 'minute');
   const hours = Math.round(minutes / 60);
-  if (hours < 24) return rtf.format(-hours, 'hour');
-  return rtf.format(-Math.round(hours / 24), 'day');
+  if (hours < 24) return rtf.format(sign * hours, 'hour');
+  return rtf.format(sign * Math.round(hours / 24), 'day');
 }
 
 export function formatDate(iso: string, locale: Locale): string {

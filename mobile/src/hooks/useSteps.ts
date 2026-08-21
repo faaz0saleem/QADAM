@@ -58,8 +58,13 @@ export async function sync(): Promise<void> {
     // §4 — ask for notifications the moment there is something worth being
     // notified about, and never before. A permission asked on first launch,
     // with nothing yet to lose, is a permission denied forever.
+    //
+    // NOT awaited. Registering for push talks to Expo's push service, and a
+    // slow or hanging round trip there would hold this try block open — which
+    // means `syncing` stays true and the screen reads "Syncing" forever, on a
+    // sync that in fact finished. Nothing below depends on the token.
     if (result.ok && (today?.coins_awarded ?? 0) > 0 && !(await hasBeenAsked())) {
-      await registerForPush();
+      void registerForPush();
     }
   } finally {
     stepStore.set({ syncing: false });

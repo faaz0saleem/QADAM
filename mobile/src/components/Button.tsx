@@ -39,7 +39,10 @@ export function Button({
         styles.base,
         variant === 'primary'
           ? { backgroundColor: surface.ruleFilled }
-          : styles.quiet,
+          // A hairline, so a quiet button still reads as something you press.
+          // Without it, centred text on the light half of the app is
+          // indistinguishable from a section heading.
+          : [styles.quiet, { borderColor: surface.rule }],
         inert && styles.inert,
         pressed && !inert && styles.pressed,
         style,
@@ -67,7 +70,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  quiet: { backgroundColor: 'transparent' },
+  quiet: { backgroundColor: 'transparent', borderWidth: StyleSheet.hairlineWidth },
   inert: { opacity: 0.4 },
   pressed: { opacity: 0.85 },
 });

@@ -17,6 +17,7 @@
     "check": "./scripts/test.sh && ./scripts/test-concurrency.sh && deno test supabase/functions/_shared/ && npm --prefix mobile run typecheck && npm --prefix mobile test && python3 scripts/check-design.py",
     "apk": "cd mobile && npx --yes eas-cli@latest build --platform android --profile preview",
     "apk:local": "./scripts/build-apk.sh",
+    "preview": "cd mobile && EXPO_PUBLIC_DEMO=1 npx expo start --web",
     "test:concurrency": "./scripts/test-concurrency.sh",
     "functions:test": "deno test supabase/functions/_shared/"
   },

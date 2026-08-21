@@ -28,8 +28,14 @@ export default function TabsLayout() {
   return (
     <Tabs>
       <TabSlot />
+      {/*
+        StyleSheet.flatten, not an array. TabList renders through expo-router's
+        <Slot>, which clones this child and refuses an array style outright —
+        it throws rather than warns. Native tolerated it; the web bundle did
+        not, which is how it was found.
+      */}
       <TabList asChild>
-        <View style={[styles.bar, { paddingBottom: insets.bottom || space.md }]}>
+        <View style={StyleSheet.flatten([styles.bar, { paddingBottom: insets.bottom || space.md }])}>
           <TabTrigger name="steps" href="/" asChild>
             <TabButton label={t.tabs.steps} />
           </TabTrigger>

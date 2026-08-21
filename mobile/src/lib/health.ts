@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 
 import { pktDayStartIso } from './format';
+import { DEMO, demoSteps } from './demo';
 
 /**
  * README §7.1 — steps come from the OS health store, and only from there.
@@ -172,6 +173,11 @@ async function iosToday(): Promise<number> {
  * a different thing and is allowed to move every three seconds.
  */
 export async function readTodaySteps(): Promise<number | null> {
+  // Preview mode: a browser has no health store, and a preview whose hero
+  // number never moves is a preview of the wrong thing — the live counter and
+  // its walking indicator are half of what the home screen is.
+  if (DEMO) return demoSteps.today + Math.floor((Date.now() / 1000) % 90);
+
   try {
     return Platform.OS === 'android' ? await androidToday() : await iosToday();
   } catch (e) {
@@ -190,6 +196,7 @@ export async function readTodaySteps(): Promise<number | null> {
  * is both maddening and the fastest way to get permanently denied.
  */
 export async function checkStepPermission(): Promise<HealthStatus> {
+  if (DEMO) return 'granted';
   try {
     return Platform.OS === 'android' ? await androidCheck() : await iosPermission();
   } catch (e) {
@@ -200,6 +207,7 @@ export async function checkStepPermission(): Promise<HealthStatus> {
 
 /** Prompt. Only ever from a button the user pressed. */
 export async function requestStepPermission(): Promise<HealthStatus> {
+  if (DEMO) return 'granted';
   try {
     return Platform.OS === 'android' ? await androidRequest() : await iosPermission();
   } catch (e) {
@@ -229,6 +237,7 @@ export async function openStepPermissionSettings(): Promise<void> {
  * generous and covers a phone that was off overnight.
  */
 export async function readDailySteps(sinceDays = 3): Promise<DailySteps[]> {
+  if (DEMO) return [{ date: pktDay(new Date()), steps: demoSteps.today }];
   try {
     const rows = Platform.OS === 'android' ? await androidRead(sinceDays) : await iosRead(sinceDays);
     return rows.filter((r) => r.steps > 0).sort((a, b) => a.date.localeCompare(b.date));

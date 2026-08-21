@@ -248,7 +248,7 @@ function ProductCard({ product }: { product: StoreProduct }) {
           </Text>
         ) : product.my_discount_pkr > 0 ? (
           <Text variant="dataSmall" style={{ color: surface.good }} numberOfLines={1}>
-            {fill(t.shop.saveWithCoins, { amount: formatNumber(product.my_discount_pkr) })}
+            {fill(t.shop.saveShort, { amount: formatNumber(product.my_discount_pkr) })}
           </Text>
         ) : (
           <Text variant="label" faint numberOfLines={1}>

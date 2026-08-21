@@ -1,7 +1,9 @@
 import 'react-native-url-polyfill/auto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import Constants from 'expo-constants';
+
+import { DEMO, demoClient } from './demo';
 
 /**
  * The client holds the ANON key only.
@@ -29,7 +31,7 @@ const anonKey =
  *
  * app/_layout.tsx reads this and says so, once, instead.
  */
-export const isConfigured = Boolean(url && anonKey);
+export const isConfigured = DEMO || Boolean(url && anonKey);
 
 if (!isConfigured) {
   // Loud at startup rather than a confusing 401 on the first request.
@@ -39,14 +41,23 @@ if (!isConfigured) {
   );
 }
 
-export const supabase = createClient(url ?? 'http://localhost', anonKey ?? 'anon', {
-  auth: {
-    storage: AsyncStorage,
-    autoRefreshToken: true,
-    persistSession: true,
-    // React Native has no URL bar to parse a session out of.
-    detectSessionInUrl: false,
-  },
-});
+/**
+ * In preview mode this is the stand-in from ./demo — the same surface, answering
+ * from fixtures. A preview build therefore has no route to a real backend at
+ * all, which is the property that makes it safe to ship one for a screenshot.
+ */
+export const supabase = (
+  DEMO
+    ? (demoClient as unknown as SupabaseClient)
+    : createClient(url ?? 'http://localhost', anonKey ?? 'anon', {
+        auth: {
+          storage: AsyncStorage,
+          autoRefreshToken: true,
+          persistSession: true,
+          // React Native has no URL bar to parse a session out of.
+          detectSessionInUrl: false,
+        },
+      })
+) as SupabaseClient;
 
 export const functionsBase = url ? `${url}/functions/v1` : '';

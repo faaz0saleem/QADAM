@@ -5,6 +5,7 @@ import { enqueue, readQueue, clearAcknowledged, markSynced } from './queue';
 import { attest } from './attest';
 import { deviceHash } from './device';
 import { supabase, functionsBase } from './supabase';
+import { DEMO, demoSync } from './demo';
 
 /**
  * §7.1 — "Sync silently and often; never make the user press a sync button, but
@@ -34,6 +35,11 @@ const EMPTY: SyncResult = {
 };
 
 export async function syncSteps(): Promise<SyncResult> {
+  // Preview mode has no Edge Function to submit to and no health store to read.
+  // Returning the fixture here rather than short-circuiting useSteps keeps the
+  // hook, the store and every screen above them on their real code path.
+  if (DEMO) return demoSync as SyncResult;
+
   // 1. Read the OS health store and put it on disk first. If everything after
   //    this fails, the walk is not lost.
   const fresh = await readDailySteps();

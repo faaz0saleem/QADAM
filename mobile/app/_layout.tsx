@@ -17,12 +17,13 @@ import { I18nProvider, loadStoredLocale, useI18n, type Locale } from '@/i18n';
 import { earning, space, text as type } from '@/theme';
 import { useSession, useSessionWatcher } from '@/hooks/useSession';
 import { isConfigured } from '@/lib/supabase';
+import { DEMO, DEMO_NOTICE } from '@/lib/demo';
 
 void SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [locale, setLocale] = useState<Locale | null>(null);
-  const [fontsLoaded] = useFonts({
+  const [fontsLoaded, fontError] = useFonts({
     FamiljenGrotesk_600SemiBold,
     FamiljenGrotesk_700Bold,
     Inter_400Regular,
@@ -40,7 +41,13 @@ export default function RootLayout() {
   // Holding the splash rather than rendering in a fallback face: the step
   // counter is the first thing on screen and it reflowing from a system font to
   // JetBrains Mono is exactly the jitter §9.3 exists to prevent.
-  if (!fontsLoaded || !locale) return <View style={styles.holding} />;
+  //
+  // But hold for a font that RESOLVES, not forever. If a face fails to load —
+  // a corrupt asset, a device that rejects it, a preview build serving the
+  // faces from CSS instead — this used to sit on a blank screen for the rest of
+  // the session. A fallback face for one launch is a much smaller problem than
+  // an app that never starts.
+  if ((!fontsLoaded && !fontError) || !locale) return <View style={styles.holding} />;
 
   return (
     <SafeAreaProvider>
@@ -51,6 +58,11 @@ export default function RootLayout() {
           then fails at the first request. Say which of those it is, before
           anyone types a phone number into a form that cannot be submitted.
         */}
+        {DEMO ? (
+          <View style={styles.preview}>
+            <Text style={styles.previewText}>{DEMO_NOTICE}</Text>
+          </View>
+        ) : null}
         {isConfigured ? <SessionGate /> : <NotConfigured />}
       </I18nProvider>
     </SafeAreaProvider>
@@ -110,6 +122,13 @@ function SessionGate() {
 }
 
 const styles = StyleSheet.create({
+  preview: {
+    backgroundColor: earning.sunken,
+    paddingTop: space.xxl,
+    paddingBottom: space.xs,
+    alignItems: 'center',
+  },
+  previewText: { ...type.label, color: earning.textFaint },
   setup: {
     flex: 1,
     backgroundColor: earning.bg,

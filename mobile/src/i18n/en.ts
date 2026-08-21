@@ -157,6 +157,10 @@ export const en = {
     title: 'Shop',
     empty: 'The shop opens as brands come on board. Keep walking — your coins are waiting.',
     saveWithCoins: 'Save PKR {{amount}} with your coins',
+    /** The same thing on a card, where two fit across a 320px screen and
+     *  the full sentence truncates mid-word. §7.4 — this line is the point
+     *  of the card, so it has to survive the column width. */
+    saveShort: 'Save PKR {{amount}}',
     noDiscountYet: 'Walk more to unlock a discount here',
     outOfStock: 'Out of stock',
     lastFew: 'Only {{count}} left',

@@ -159,6 +159,7 @@ export const ur: Copy = {
     title: 'دکان',
     empty: 'برانڈز شامل ہوتے ہی دکان کھل جائے گی۔ چلتے رہیں — آپ کے سکے منتظر ہیں۔',
     saveWithCoins: 'اپنے سکوں سے {{amount}} روپے بچائیں',
+    saveShort: '{{amount}} روپے کی بچت',
     noDiscountYet: 'یہاں رعایت کے لیے مزید چلیں',
     outOfStock: 'ختم ہو گیا',
     lastFew: 'صرف {{count}} باقی',
